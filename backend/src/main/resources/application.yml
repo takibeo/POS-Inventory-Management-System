@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: pos-inventory-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/pos_inventory
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+
+jwt:
+  secret: change-me-super-secret
+  expiration-ms: 900000
+  refresh-expiration-ms: 2592000000
