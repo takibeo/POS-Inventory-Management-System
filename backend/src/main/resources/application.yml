@@ -21,6 +21,7 @@ server:
   port: 8080
 
 jwt:
-  secret: change-me-super-secret
+  # Secret must be at least 32 bytes for HS256 (256 bits)
+  secret: u8K9s3jNf7Vq2xYzA1bC4dE5fG6hI7jK
   expiration-ms: 900000
   refresh-expiration-ms: 2592000000

@@ -6,6 +6,8 @@ import com.pos.repository.RoleRepository;
 import com.pos.repository.UserRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
+import org.springframework.core.Ordered;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Component
+@Order(Ordered.LOWEST_PRECEDENCE)
 public class DataInitializer implements ApplicationRunner {
 
     private final RoleRepository roleRepository;
