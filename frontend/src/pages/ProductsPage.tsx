@@ -3,7 +3,10 @@ import productService from '../services/productService';
 import type { Product } from '../types/product';
 
 export default function ProductsPage() {
-  const { data, isLoading, error } = useQuery<Product[], Error>(['products'], productService.getProducts);
+  const { data, isLoading, error } = useQuery<Product[], Error>({
+    queryKey: ['products'],
+    queryFn: productService.getProducts,
+  });
 
   return (
     <div>
