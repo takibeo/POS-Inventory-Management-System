@@ -6,7 +6,7 @@ Mục tiêu tuần 1 là hoàn thiện nền tảng backend và phần CRUD fron
 
 ---
 
-## Thành viên 1 (Bạn - Trưởng nhóm / Backend Lead)
+## Thành viên 1 
 
 ### Mục tiêu tuần 1
 Hoàn thiện nền tảng Backend.
