@@ -4,4 +4,6 @@ export interface Branch {
   code: string;
   address?: string;
   phone?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

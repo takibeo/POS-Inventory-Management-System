@@ -1,7 +1,9 @@
 package com.pos.controller;
 
-import com.pos.entity.Branch;
+import com.pos.dto.request.BranchRequest;
+import com.pos.dto.response.BranchResponse;
 import com.pos.service.BranchService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,27 +21,28 @@ public class BranchController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Branch>> getAll() {
+    public ResponseEntity<List<BranchResponse>> getAll() {
         return ResponseEntity.ok(branchService.getAllBranches());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Branch> getById(@PathVariable UUID id) {
+    public ResponseEntity<BranchResponse> getById(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(branchService.getBranchById(id));
     }
 
     @PostMapping
-    public ResponseEntity<Branch> create(@RequestBody Branch branch) {
-        return ResponseEntity.ok(branchService.createBranch(branch));
+    public ResponseEntity<BranchResponse> create(@Valid @RequestBody BranchRequest request) {
+        return ResponseEntity.ok(branchService.createBranch(request));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Branch> update(@PathVariable UUID id, @RequestBody Branch branch) {
-        return ResponseEntity.ok(branchService.updateBranch(id, branch));
+    public ResponseEntity<BranchResponse> update(@PathVariable("id") UUID id,
+                                                 @Valid @RequestBody BranchRequest request) {
+        return ResponseEntity.ok(branchService.updateBranch(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
         branchService.deleteBranch(id);
         return ResponseEntity.noContent().build();
     }
