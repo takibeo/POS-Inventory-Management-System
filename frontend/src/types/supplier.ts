@@ -6,4 +6,6 @@ export interface Supplier {
   email?: string;
   address?: string;
   notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
