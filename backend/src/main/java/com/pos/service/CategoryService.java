@@ -1,14 +1,15 @@
 package com.pos.service;
 
-import com.pos.entity.Category;
+import com.pos.dto.request.CategoryRequest;
+import com.pos.dto.response.CategoryResponse;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface CategoryService {
-    List<Category> getAllCategories();
-    Category getCategoryById(UUID id);
-    Category createCategory(Category category);
-    Category updateCategory(UUID id, Category category);
+    List<CategoryResponse> getAllCategories();
+    CategoryResponse getCategoryById(UUID id);
+    CategoryResponse createCategory(CategoryRequest request);
+    CategoryResponse updateCategory(UUID id, CategoryRequest request);
     void deleteCategory(UUID id);
 }
