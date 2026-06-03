@@ -1,14 +1,15 @@
 package com.pos.service;
 
-import com.pos.entity.Supplier;
+import com.pos.dto.request.SupplierRequest;
+import com.pos.dto.response.SupplierResponse;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface SupplierService {
-    List<Supplier> getAllSuppliers();
-    Supplier getSupplierById(UUID id);
-    Supplier createSupplier(Supplier supplier);
-    Supplier updateSupplier(UUID id, Supplier supplier);
+    List<SupplierResponse> getAllSuppliers();
+    SupplierResponse getSupplierById(UUID id);
+    SupplierResponse createSupplier(SupplierRequest request);
+    SupplierResponse updateSupplier(UUID id, SupplierRequest request);
     void deleteSupplier(UUID id);
 }

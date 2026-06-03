@@ -1,12 +1,18 @@
 package com.pos.service.impl;
 
+import com.pos.dto.request.SupplierRequest;
+import com.pos.dto.response.SupplierResponse;
 import com.pos.entity.Supplier;
+import com.pos.exception.ResourceNotFoundException;
+import com.pos.mapper.SupplierMapper;
 import com.pos.repository.SupplierRepository;
 import com.pos.service.SupplierService;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class SupplierServiceImpl implements SupplierService {
@@ -18,35 +24,46 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
-    public List<Supplier> getAllSuppliers() {
-        return supplierRepository.findAll();
+    public List<SupplierResponse> getAllSuppliers() {
+        return supplierRepository.findAll().stream()
+                .map(SupplierMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Supplier getSupplierById(UUID id) {
-        return supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found"));
+    public SupplierResponse getSupplierById(UUID id) {
+        return SupplierMapper.toResponse(findSupplierEntity(id));
     }
 
     @Override
-    public Supplier createSupplier(Supplier supplier) {
-        return supplierRepository.save(supplier);
+    public SupplierResponse createSupplier(SupplierRequest request) {
+        Supplier supplier = new Supplier();
+        supplier.setId(UUID.randomUUID());
+        SupplierMapper.updateEntityFromRequest(supplier, request);
+        Instant now = Instant.now();
+        supplier.setCreatedAt(now);
+        supplier.setUpdatedAt(now);
+        return SupplierMapper.toResponse(supplierRepository.save(supplier));
     }
 
     @Override
-    public Supplier updateSupplier(UUID id, Supplier supplier) {
-        Supplier existing = getSupplierById(id);
-        existing.setName(supplier.getName());
-        existing.setContactName(supplier.getContactName());
-        existing.setPhone(supplier.getPhone());
-        existing.setEmail(supplier.getEmail());
-        existing.setAddress(supplier.getAddress());
-        existing.setNotes(supplier.getNotes());
-        return supplierRepository.save(existing);
+    public SupplierResponse updateSupplier(UUID id, SupplierRequest request) {
+        Supplier existing = findSupplierEntity(id);
+        SupplierMapper.updateEntityFromRequest(existing, request);
+        existing.setUpdatedAt(Instant.now());
+        return SupplierMapper.toResponse(supplierRepository.save(existing));
     }
 
     @Override
     public void deleteSupplier(UUID id) {
+        if (!supplierRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Nhà cung cấp không tồn tại");
+        }
         supplierRepository.deleteById(id);
+    }
+
+    private Supplier findSupplierEntity(UUID id) {
+        return supplierRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Nhà cung cấp không tìm thấy"));
     }
 }
