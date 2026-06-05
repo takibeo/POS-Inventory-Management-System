@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import {
+  Button,
+  ConfirmModal,
+  DataTable,
+  type DataTableColumn,
+  PageHeader,
+  TableRowActions,
+} from '../components/ui';
 import supplierService from '../services/supplierService';
 import type { Supplier } from '../types/supplier';
 
@@ -25,7 +34,7 @@ const defaultValues: SupplierFormValues = {
 export default function SuppliersPage() {
   const queryClient = useQueryClient();
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Supplier | null>(null);
 
   const { data: suppliers, isLoading, isError } = useQuery<Supplier[], Error>({
     queryKey: ['suppliers'],
@@ -38,11 +47,9 @@ export default function SuppliersPage() {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
       reset(defaultValues);
       setEditingSupplier(null);
-      setMessage('Tạo nhà cung cấp thành công.');
+      toast.success('Tạo nhà cung cấp thành công.');
     },
-    onError: () => {
-      setMessage('Không thể tạo nhà cung cấp. Vui lòng thử lại.');
-    },
+    onError: () => toast.error('Không thể tạo nhà cung cấp.'),
   });
 
   const updateMutation = useMutation({
@@ -52,22 +59,19 @@ export default function SuppliersPage() {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
       reset(defaultValues);
       setEditingSupplier(null);
-      setMessage('Cập nhật nhà cung cấp thành công.');
+      toast.success('Cập nhật nhà cung cấp thành công.');
     },
-    onError: () => {
-      setMessage('Không thể cập nhật nhà cung cấp. Vui lòng thử lại.');
-    },
+    onError: () => toast.error('Không thể cập nhật nhà cung cấp.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: supplierService.deleteSupplier,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['suppliers'] });
-      setMessage('Xóa nhà cung cấp thành công.');
+      setDeleteTarget(null);
+      toast.success('Xóa nhà cung cấp thành công.');
     },
-    onError: () => {
-      setMessage('Không thể xóa nhà cung cấp. Vui lòng thử lại.');
-    },
+    onError: () => toast.error('Không thể xóa nhà cung cấp.'),
   });
 
   const {
@@ -83,7 +87,6 @@ export default function SuppliersPage() {
       updateMutation.mutate({ id: editingSupplier.id, supplier: values });
       return;
     }
-
     createMutation.mutate(values);
   };
 
@@ -95,166 +98,114 @@ export default function SuppliersPage() {
     setValue('email', supplier.email ?? '');
     setValue('address', supplier.address ?? '');
     setValue('notes', supplier.notes ?? '');
-    setMessage(null);
   };
 
   const handleCancel = () => {
     setEditingSupplier(null);
     reset(defaultValues);
-    setMessage(null);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Bạn có chắc muốn xóa nhà cung cấp này?')) {
-      deleteMutation.mutate(id);
-    }
-  };
+  const columns: DataTableColumn<Supplier>[] = [
+    { key: 'name', header: 'Tên' },
+    { key: 'contactName', header: 'Liên hệ', render: (row) => row.contactName ?? '—' },
+    { key: 'phone', header: 'Điện thoại', render: (row) => row.phone ?? '—' },
+    { key: 'email', header: 'Email', render: (row) => row.email ?? '—' },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Quản lý nhà cung cấp</h2>
-          <p className="text-sm text-slate-500">Tạo, sửa và xóa nhà cung cấp.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Quản lý nhà cung cấp"
+        description="Tạo, sửa và xóa nhà cung cấp."
+      />
 
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4">
+        <div className="ui-card">
+          <h3 className="mb-4 text-lg font-semibold">
             {editingSupplier ? 'Sửa nhà cung cấp' : 'Thêm nhà cung cấp mới'}
           </h3>
 
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Tên nhà cung cấp</label>
+              <label className="ui-label">Tên nhà cung cấp</label>
               <input
                 type="text"
                 {...register('name', { required: 'Tên nhà cung cấp là bắt buộc' })}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
+                className="ui-input"
               />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Tên người liên hệ</label>
-              <input
-                type="text"
-                {...register('contactName')}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
-              />
+              <label className="ui-label">Tên người liên hệ</label>
+              <input type="text" {...register('contactName')} className="ui-input" />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Số điện thoại</label>
-              <input
-                type="text"
-                {...register('phone')}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
-              />
+              <label className="ui-label">Số điện thoại</label>
+              <input type="text" {...register('phone')} className="ui-input" />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Email</label>
-              <input
-                type="email"
-                {...register('email')}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
-              />
+              <label className="ui-label">Email</label>
+              <input type="email" {...register('email')} className="ui-input" />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Địa chỉ</label>
-              <input
-                type="text"
-                {...register('address')}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
-              />
+              <label className="ui-label">Địa chỉ</label>
+              <input type="text" {...register('address')} className="ui-input" />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Ghi chú</label>
-              <textarea
-                rows={4}
-                {...register('notes')}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
-              />
+              <label className="ui-label">Ghi chú</label>
+              <textarea rows={4} {...register('notes')} className="ui-input" />
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {editingSupplier ? 'Cập nhật' : 'Tạo nhà cung cấp'}
-              </button>
+              </Button>
               {editingSupplier && (
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
-                >
+                <Button type="button" variant="secondary" onClick={handleCancel}>
                   Hủy
-                </button>
+                </Button>
               )}
             </div>
           </form>
-
-          {message && <p className="mt-4 text-sm text-slate-700">{message}</p>}
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4">Danh sách nhà cung cấp</h3>
-
-          {isLoading && <p>Đang tải nhà cung cấp...</p>}
-          {isError && <p className="text-sm text-red-600">Không thể tải danh sách nhà cung cấp.</p>}
-
-          {suppliers && suppliers.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="px-4 py-3">Tên</th>
-                    <th className="px-4 py-3">Liên hệ</th>
-                    <th className="px-4 py-3">Điện thoại</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {suppliers.map((supplier) => (
-                    <tr key={supplier.id}>
-                      <td className="px-4 py-3">{supplier.name}</td>
-                      <td className="px-4 py-3">{supplier.contactName ?? '—'}</td>
-                      <td className="px-4 py-3">{supplier.phone ?? '—'}</td>
-                      <td className="px-4 py-3">{supplier.email ?? '—'}</td>
-                      <td className="px-4 py-3 space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(supplier)}
-                          className="rounded-xl border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(supplier.id)}
-                          className="rounded-xl border border-red-300 bg-red-50 px-3 py-1 text-sm font-semibold text-red-700 transition hover:bg-red-100"
-                        >
-                          Xóa
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            !isLoading && <p>Chưa có nhà cung cấp nào.</p>
-          )}
+        <div className="ui-card">
+          <h3 className="mb-4 text-lg font-semibold">Danh sách nhà cung cấp</h3>
+          <DataTable
+            columns={columns}
+            data={suppliers ?? []}
+            rowKey={(row) => row.id}
+            isLoading={isLoading}
+            error={isError ? 'Không thể tải danh sách nhà cung cấp.' : null}
+            emptyTitle="Chưa có nhà cung cấp"
+            emptyDescription="Thêm nhà cung cấp mới bằng form bên trái."
+            renderActions={(supplier) => (
+              <TableRowActions
+                onEdit={() => handleEdit(supplier)}
+                onDelete={() => setDeleteTarget(supplier)}
+              />
+            )}
+          />
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Xóa nhà cung cấp"
+        message={`Bạn có chắc muốn xóa nhà cung cấp "${deleteTarget?.name}"?`}
+        confirmLabel="Xóa"
+        isLoading={deleteMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+      />
     </div>
   );
 }
