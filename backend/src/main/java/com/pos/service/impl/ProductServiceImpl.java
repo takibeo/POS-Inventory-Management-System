@@ -1,57 +1,122 @@
 package com.pos.service.impl;
 
+import com.pos.dto.request.ProductRequest;
+import com.pos.dto.response.ProductResponse;
+import com.pos.entity.Category;
 import com.pos.entity.Product;
+import com.pos.entity.Supplier;
+import com.pos.exception.BusinessException;
+import com.pos.exception.ResourceNotFoundException;
+import com.pos.mapper.ProductMapper;
+import com.pos.repository.CategoryRepository;
 import com.pos.repository.ProductRepository;
+import com.pos.repository.SupplierRepository;
 import com.pos.service.ProductService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
+@Transactional(readOnly = true)
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final SupplierRepository supplierRepository;
 
-    public ProductServiceImpl(ProductRepository productRepository) {
+    public ProductServiceImpl(ProductRepository productRepository,
+                              CategoryRepository categoryRepository,
+                              SupplierRepository supplierRepository) {
         this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.supplierRepository = supplierRepository;
     }
 
     @Override
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public Page<ProductResponse> getAllProducts(UUID categoryId,
+                                                Boolean isActive,
+                                                Pageable pageable) {
+        return productRepository
+                .findAllWithFilters(categoryId, isActive, pageable)
+                .map(ProductMapper::toResponse);
     }
 
     @Override
-    public Product getProductById(UUID id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+    public ProductResponse getProductById(UUID id) {
+        Product product = productRepository.findByIdWithRelations(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Sản phẩm không tồn tại: " + id));
+        return ProductMapper.toResponse(product);
     }
 
     @Override
-    public Product createProduct(Product product) {
-        return productRepository.save(product);
+    @Transactional
+    public ProductResponse createProduct(ProductRequest request) {
+        if (productRepository.existsBySku(request.getSku())) {
+            throw new BusinessException("SKU_DUPLICATE",
+                    "SKU '" + request.getSku() + "' đã tồn tại");
+        }
+
+        Category category = resolveCategory(request.getCategoryId());
+        Supplier supplier = resolveSupplier(request.getSupplierId());
+
+        Product product = new Product();
+        product.setId(UUID.randomUUID());
+        Instant now = Instant.now();
+        product.setCreatedAt(now);
+        product.setUpdatedAt(now);
+
+        ProductMapper.updateEntityFromRequest(
+                product, request, category, supplier);
+        return ProductMapper.toResponse(productRepository.save(product));
     }
 
     @Override
-    public Product updateProduct(UUID id, Product product) {
-        Product existing = getProductById(id);
-        existing.setSku(product.getSku());
-        existing.setName(product.getName());
-        existing.setDescription(product.getDescription());
-        existing.setCategory(product.getCategory());
-        existing.setSupplier(product.getSupplier());
-        existing.setPrice(product.getPrice());
-        existing.setCost(product.getCost());
-        existing.setBarcode(product.getBarcode());
-        existing.setUnit(product.getUnit());
-        existing.setReorderLevel(product.getReorderLevel());
-        existing.setIsActive(product.getIsActive());
-        return productRepository.save(existing);
+    @Transactional
+    public ProductResponse updateProduct(UUID id, ProductRequest request) {
+        Product existing = productRepository.findByIdWithRelations(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Sản phẩm không tồn tại: " + id));
+
+        if (productRepository.existsBySkuAndIdNot(request.getSku(), id)) {
+            throw new BusinessException("SKU_DUPLICATE",
+                    "SKU '" + request.getSku() + "' đã được sử dụng bởi sản phẩm khác");
+        }
+
+        Category category = resolveCategory(request.getCategoryId());
+        Supplier supplier = resolveSupplier(request.getSupplierId());
+
+        ProductMapper.updateEntityFromRequest(
+                existing, request, category, supplier);
+        existing.setUpdatedAt(Instant.now());
+        return ProductMapper.toResponse(productRepository.save(existing));
     }
 
     @Override
+    @Transactional
     public void deleteProduct(UUID id) {
+        if (!productRepository.existsById(id)) {
+            throw new ResourceNotFoundException(
+                    "Sản phẩm không tồn tại: " + id);
+        }
         productRepository.deleteById(id);
+    }
+
+    private Category resolveCategory(UUID categoryId) {
+        if (categoryId == null) return null;
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Danh mục không tồn tại: " + categoryId));
+    }
+
+    private Supplier resolveSupplier(UUID supplierId) {
+        if (supplierId == null) return null;
+        return supplierRepository.findById(supplierId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Nhà cung cấp không tồn tại: " + supplierId));
     }
 }
