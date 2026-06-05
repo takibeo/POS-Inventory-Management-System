@@ -53,12 +53,8 @@ export default function DashboardPage() {
     { key: 'reorderLevel', header: 'Mức đặt lại' },
   ];
 
-  const isLoading =
-    revenueQuery.isLoading ||
-    profitQuery.isLoading ||
-    bestSellersQuery.isLoading ||
-    lowStockQuery.isLoading ||
-    productsQuery.isLoading;
+  const isLoading = productsQuery.isLoading;
+  const monitoredProducts = products.filter((p) => (p.reorderLevel ?? 0) > 0).length;
 
   return (
     <div className="space-y-6">
@@ -96,13 +92,19 @@ export default function DashboardPage() {
             />
             <StatCard
               label="Cảnh báo tồn kho thấp"
-              value={String(lowStock.length)}
-              hint={lowStock.length > 0 ? 'Cần nhập thêm hàng' : 'Ổn định'}
+              value={reportsUnavailable ? String(monitoredProducts) : String(lowStock.length)}
+              hint={
+                reportsUnavailable
+                  ? 'Sản phẩm có mức đặt lại (chờ API /reports/low-stock)'
+                  : lowStock.length > 0
+                    ? 'Cần nhập thêm hàng'
+                    : 'Ổn định'
+              }
               trend={lowStock.length > 0 ? 'down' : 'neutral'}
             />
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="ui-card">
             <h3 className="mb-4 text-lg font-semibold text-slate-900">
               {chartLabel === 'revenue' ? 'Doanh thu theo ngày' : 'Lợi nhuận theo ngày'}
             </h3>
@@ -132,7 +134,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="ui-card">
               <h3 className="mb-4 text-lg font-semibold">Bán chạy</h3>
               <DataTable
                 columns={bestSellerColumns}
@@ -142,7 +144,7 @@ export default function DashboardPage() {
                 emptyDescription="API best-sellers chưa trả về kết quả."
               />
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="ui-card">
               <h3 className="mb-4 text-lg font-semibold">Tồn kho thấp</h3>
               <DataTable
                 columns={lowStockColumns}
