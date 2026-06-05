@@ -1,53 +1,310 @@
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import { z } from 'zod';
+import {
+  Button,
+  ConfirmModal,
+  DataTable,
+  type DataTableColumn,
+  PageHeader,
+  TableRowActions,
+} from '../components/ui';
+import categoryService from '../services/categoryService';
 import productService from '../services/productService';
-import type { Product } from '../types/product';
+import supplierService from '../services/supplierService';
+import type { Product, ProductFormValues } from '../types/product';
+
+const productSchema = z.object({
+  sku: z.string().min(1, 'SKU là bắt buộc'),
+  name: z.string().min(1, 'Tên sản phẩm là bắt buộc'),
+  description: z.string().optional(),
+  categoryId: z.string().optional(),
+  supplierId: z.string().optional(),
+  price: z.coerce.number().min(0, 'Giá bán phải ≥ 0'),
+  cost: z.coerce.number().min(0, 'Giá vốn phải ≥ 0'),
+  unit: z.string().optional(),
+  reorderLevel: z.coerce.number().min(0).optional(),
+  isActive: z.boolean(),
+});
+
+const defaultValues: ProductFormValues = {
+  sku: '',
+  name: '',
+  description: '',
+  categoryId: '',
+  supplierId: '',
+  price: 0,
+  cost: 0,
+  unit: '',
+  reorderLevel: 0,
+  isActive: true,
+};
+
+const formatCurrency = (value: number) =>
+  value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 
 export default function ProductsPage() {
-  const { data, isLoading, error } = useQuery<Product[], Error>({
+  const queryClient = useQueryClient();
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+
+  const { data: products, isLoading, error } = useQuery<Product[], Error>({
     queryKey: ['products'],
     queryFn: productService.getProducts,
   });
 
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: categoryService.getCategories,
+  });
+
+  const { data: suppliers } = useQuery({
+    queryKey: ['suppliers'],
+    queryFn: supplierService.getSuppliers,
+  });
+
+  const createMutation = useMutation({
+    mutationFn: productService.createProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      resetForm();
+      toast.success('Tạo sản phẩm thành công.');
+    },
+    onError: () => toast.error('Không thể tạo sản phẩm.'),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, values }: { id: string; values: ProductFormValues }) =>
+      productService.updateProduct(id, values),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      resetForm();
+      toast.success('Cập nhật sản phẩm thành công.');
+    },
+    onError: () => toast.error('Không thể cập nhật sản phẩm.'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: productService.deleteProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      setDeleteTarget(null);
+      toast.success('Xóa sản phẩm thành công.');
+    },
+    onError: () => toast.error('Không thể xóa sản phẩm.'),
+  });
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<ProductFormValues>({ defaultValues });
+
+  const resetForm = () => {
+    setEditingProduct(null);
+    reset(defaultValues);
+  };
+
+  const onSubmit = (values: ProductFormValues) => {
+    const parsed = productSchema.safeParse(values);
+    if (!parsed.success) {
+      parsed.error.issues.forEach((issue) => {
+        const field = issue.path[0] as keyof ProductFormValues;
+        if (field) setError(field, { message: issue.message });
+      });
+      return;
+    }
+
+    const payload: ProductFormValues = {
+      ...parsed.data,
+      categoryId: parsed.data.categoryId || undefined,
+      supplierId: parsed.data.supplierId || undefined,
+    };
+
+    if (editingProduct) {
+      updateMutation.mutate({ id: editingProduct.id, values: payload });
+      return;
+    }
+    createMutation.mutate(payload);
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setValue('sku', product.sku);
+    setValue('name', product.name);
+    setValue('description', product.description ?? '');
+    setValue('categoryId', product.category?.id ?? product.categoryId ?? '');
+    setValue('supplierId', product.supplier?.id ?? product.supplierId ?? '');
+    setValue('price', product.price);
+    setValue('cost', product.cost);
+    setValue('unit', product.unit ?? '');
+    setValue('reorderLevel', product.reorderLevel ?? 0);
+    setValue('isActive', product.isActive ?? true);
+  };
+
+  const columns: DataTableColumn<Product>[] = [
+    { key: 'sku', header: 'SKU' },
+    { key: 'name', header: 'Tên' },
+    {
+      key: 'price',
+      header: 'Giá bán',
+      render: (row) => formatCurrency(row.price),
+    },
+    {
+      key: 'cost',
+      header: 'Giá vốn',
+      render: (row) => formatCurrency(row.cost),
+    },
+    { key: 'unit', header: 'Đơn vị', render: (row) => row.unit ?? '—' },
+    {
+      key: 'isActive',
+      header: 'Trạng thái',
+      render: (row) => (
+        <span
+          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+            row.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+          }`}
+        >
+          {row.isActive ? 'Hoạt động' : 'Ngừng'}
+        </span>
+      ),
+    },
+  ];
+
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Quản lý sản phẩm</h2>
-          <p className="text-sm text-slate-500">Danh sách sản phẩm hiện có trong hệ thống.</p>
+    <div className="space-y-6">
+      <PageHeader
+        title="Quản lý sản phẩm"
+        description="Tạo, sửa và xóa sản phẩm trong hệ thống."
+      />
+
+      <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
+        <div className="ui-card">
+          <h3 className="mb-4 text-lg font-semibold">
+            {editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}
+          </h3>
+
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <div>
+              <label className="ui-label">SKU</label>
+              <input type="text" {...register('sku')} className="ui-input" />
+              {errors.sku && <p className="mt-1 text-sm text-red-600">{errors.sku.message}</p>}
+            </div>
+
+            <div>
+              <label className="ui-label">Tên sản phẩm</label>
+              <input type="text" {...register('name')} className="ui-input" />
+              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+            </div>
+
+            <div>
+              <label className="ui-label">Mô tả</label>
+              <textarea rows={3} {...register('description')} className="ui-input" />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="ui-label">Giá bán</label>
+                <input type="number" step="1000" {...register('price')} className="ui-input" />
+                {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>}
+              </div>
+              <div>
+                <label className="ui-label">Giá vốn</label>
+                <input type="number" step="1000" {...register('cost')} className="ui-input" />
+                {errors.cost && <p className="mt-1 text-sm text-red-600">{errors.cost.message}</p>}
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="ui-label">Đơn vị</label>
+                <input type="text" {...register('unit')} className="ui-input" placeholder="cái, hộp..." />
+              </div>
+              <div>
+                <label className="ui-label">Mức đặt lại</label>
+                <input type="number" {...register('reorderLevel')} className="ui-input" />
+              </div>
+            </div>
+
+            <div>
+              <label className="ui-label">Danh mục</label>
+              <select {...register('categoryId')} className="ui-input">
+                <option value="">— Không chọn —</option>
+                {categories?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="ui-label">Nhà cung cấp</label>
+              <select {...register('supplierId')} className="ui-input">
+                <option value="">— Không chọn —</option>
+                {suppliers?.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <label className="flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" {...register('isActive')} className="rounded border-slate-300" />
+              Đang hoạt động
+            </label>
+
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Button
+                type="submit"
+                disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
+              >
+                {editingProduct ? 'Cập nhật' : 'Tạo sản phẩm'}
+              </Button>
+              {editingProduct && (
+                <Button type="button" variant="secondary" onClick={resetForm}>
+                  Hủy
+                </Button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        <div className="ui-card">
+          <h3 className="mb-4 text-lg font-semibold">Danh sách sản phẩm</h3>
+          <DataTable
+            columns={columns}
+            data={products ?? []}
+            rowKey={(row) => row.id}
+            isLoading={isLoading}
+            error={error ? 'Không thể tải danh sách sản phẩm.' : null}
+            emptyTitle="Chưa có sản phẩm"
+            emptyDescription="Thêm sản phẩm mới bằng form bên trái."
+            renderActions={(product) => (
+              <TableRowActions
+                onEdit={() => handleEdit(product)}
+                onDelete={() => setDeleteTarget(product)}
+              />
+            )}
+          />
         </div>
       </div>
 
-      {isLoading && <p>Đang tải sản phẩm...</p>}
-      {error && <p className="text-sm text-red-600">Không thể tải danh sách sản phẩm.</p>}
-
-      {data && data.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-            <thead className="bg-slate-50 text-slate-600">
-              <tr>
-                <th className="px-4 py-3">SKU</th>
-                <th className="px-4 py-3">Tên</th>
-                <th className="px-4 py-3">Giá</th>
-                <th className="px-4 py-3">Đơn vị</th>
-                <th className="px-4 py-3">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {data.map((product) => (
-                <tr key={product.id}>
-                  <td className="px-4 py-3">{product.sku}</td>
-                  <td className="px-4 py-3">{product.name}</td>
-                  <td className="px-4 py-3">{product.price.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })}</td>
-                  <td className="px-4 py-3">{product.unit ?? 'N/A'}</td>
-                  <td className="px-4 py-3">{product.isActive ? 'Hoạt động' : 'Không hoạt động'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        !isLoading && <p>Chưa có sản phẩm nào trong hệ thống.</p>
-      )}
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Xóa sản phẩm"
+        message={`Bạn có chắc muốn xóa sản phẩm "${deleteTarget?.name}"? Hành động này không thể hoàn tác.`}
+        confirmLabel="Xóa"
+        isLoading={deleteMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+      />
     </div>
   );
 }
