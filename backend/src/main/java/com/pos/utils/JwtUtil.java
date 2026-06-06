@@ -11,7 +11,10 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
@@ -34,19 +37,28 @@ public class JwtUtil {
     }
 
     public String generateToken(String username) {
-        return buildToken(username, expirationMs);
+        return buildToken(username, null, expirationMs);
+    }
+
+    public String generateToken(String username, Collection<String> roles) {
+        return buildToken(username, roles, expirationMs);
     }
 
     public String generateRefreshToken(String username) {
-        return buildToken(username, refreshExpirationMs);
+        return buildToken(username, null, refreshExpirationMs);
     }
 
-    private String buildToken(String username, long expiry) {
-        return Jwts.builder()
+    private String buildToken(String username, Collection<String> roles, long expiry) {
+        var builder = Jwts.builder()
                 .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + expiry))
-                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + expiry));
+        
+        if (roles != null && !roles.isEmpty()) {
+            builder.claim("roles", roles);
+        }
+        
+        return builder.signWith(signingKey, SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -67,6 +79,12 @@ public class JwtUtil {
     public String validateRefreshToken(String token) {
         Claims claims = parseClaims(token);
         return claims.getSubject();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> getRolesFromToken(String token) {
+        Claims claims = parseClaims(token);
+        return claims.get("roles", List.class);
     }
 
     private Claims parseClaims(String token) {
