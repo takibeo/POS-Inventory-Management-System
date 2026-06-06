@@ -1,14 +1,23 @@
 package com.pos.service;
 
-import com.pos.entity.Product;
+import com.pos.dto.request.ProductRequest;
+import com.pos.dto.response.ProductResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.UUID;
 
 public interface ProductService {
-    List<Product> getAllProducts();
-    Product getProductById(UUID id);
-    Product createProduct(Product product);
-    Product updateProduct(UUID id, Product product);
+
+    Page<ProductResponse> getAllProducts(UUID categoryId,
+                                         Boolean isActive,
+                                         Pageable pageable);
+
+    ProductResponse getProductById(UUID id);
+
+    ProductResponse createProduct(ProductRequest request);
+
+    ProductResponse updateProduct(UUID id, ProductRequest request);
+
     void deleteProduct(UUID id);
 }

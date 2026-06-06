@@ -38,7 +38,8 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Invalid username or password");
         }
 
-        String token = jwtUtil.generateToken(user.getUsername());
+        var roles = user.getRoles().stream().map(r -> "ROLE_" + r.getName()).toList();
+        String token = jwtUtil.generateToken(user.getUsername(), roles);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
         return new TokenResponse(token, refreshToken.getToken(), "Bearer", jwtUtil.getExpirationMs());
@@ -47,7 +48,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public TokenResponse refreshToken(RefreshTokenRequest request) {
         RefreshToken validRefreshToken = refreshTokenService.verifyRefreshToken(request.refreshToken());
-        String token = jwtUtil.generateToken(validRefreshToken.getUser().getUsername());
+        var roles = validRefreshToken.getUser().getRoles().stream().map(r -> "ROLE_" + r.getName()).toList();
+        String token = jwtUtil.generateToken(validRefreshToken.getUser().getUsername(), roles);
         refreshTokenService.revokeRefreshToken(request.refreshToken());
         RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(validRefreshToken.getUser());
 

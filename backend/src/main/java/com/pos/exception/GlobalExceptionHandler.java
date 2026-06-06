@@ -1,9 +1,12 @@
 package com.pos.exception;
 
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -11,62 +14,128 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
+    //1. Validation loi tren @RequestBody (@Valid)
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
-                                                                  HttpHeaders headers,
-                                                                  HttpStatusCode status,
-                                                                  WebRequest request) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach(error -> {
-            String fieldName = ((FieldError) error).getField();
-            String message = error.getDefaultMessage();
-            errors.put(fieldName, message);
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            String field = ((FieldError)error).getField();
+            fieldErrors.put(field, error.getDefaultMessage());
         });
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", Instant.now());
-        body.put("status", status.value());
-        body.put("errors", errors);
-        body.put("path", request.getDescription(false));
+
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "VALIDATION_ERROR",
+                "Dữ liệu đầu vào không hợp lệ",
+                extractPath(request)
+        );
+        body.setFieldErrors(fieldErrors);
+
         return new ResponseEntity<>(body, headers, status);
     }
 
+    // 2. Validation lỗi trên @PathVariable / @RequestParam
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex, WebRequest request){
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        ex.getConstraintViolations().forEach(v ->{
+            String field = v.getPropertyPath().toString();
+            fieldErrors.put(field, v.getMessage());
+        });
+
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "VALIDATION_ERROR",
+                "Tham số không hợp lệ",
+                extractPath(request)
+        );
+        body.setFieldErrors(fieldErrors);
+
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    // 3. Resource không tìm thấy → 404
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Object> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", Instant.now());
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "Not Found");
-        body.put("message", ex.getMessage());
-        body.put("path", request.getDescription(false));
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "RESOURCE_NOT_FOUND",
+                ex.getMessage(),
+                extractPath(request)
+        ));
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Object> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", Instant.now());
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("error", "Bad Request");
-        body.put("message", ex.getMessage());
-        body.put("path", request.getDescription(false));
-        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    // 4. Lỗi nghiệp vụ → 422
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(
+            BusinessException ex, WebRequest request) {
+
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(new ErrorResponse(
+                        HttpStatus.UNPROCESSABLE_ENTITY.value(),
+                        ex.getErrorCode(),
+                        ex.getMessage(),
+                        extractPath(request)
+                ));
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Object> handleRuntimeException(RuntimeException ex, WebRequest request) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", Instant.now());
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("error", "Internal Server Error");
-        body.put("message", ex.getMessage());
-        body.put("path", request.getDescription(false));
-        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    // 5. Chưa đăng nhập → 401
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            AuthenticationException ex, WebRequest request) {
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(
+                        HttpStatus.UNAUTHORIZED.value(),
+                        "UNAUTHORIZED",
+                        "Bạn cần đăng nhập để thực hiện thao tác này",
+                        extractPath(request)
+                ));
     }
+
+    // 6. Không có quyền → 403
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(
+            AccessDeniedException ex, WebRequest request) {
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(
+                        HttpStatus.FORBIDDEN.value(),
+                        "FORBIDDEN",
+                        "Bạn không có quyền thực hiện thao tác này",
+                        extractPath(request)
+                ));
+    }
+
+    // 7. Catch-all lỗi không mong đợi → 500
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(
+            Exception ex, WebRequest request) {
+
+        logger.error("Unhandled exception at " + extractPath(request), ex);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "INTERNAL_ERROR",
+                        "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau",
+                        extractPath(request)
+                ));
+    }
+
+    private String extractPath(WebRequest request) {
+        return request.getDescription(false).replace("uri=", "");
+    }
+
 }
