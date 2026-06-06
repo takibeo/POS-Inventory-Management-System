@@ -3,18 +3,21 @@ package com.pos.service.impl;
 import com.pos.dto.request.CategoryRequest;
 import com.pos.dto.response.CategoryResponse;
 import com.pos.entity.Category;
+import com.pos.exception.BusinessException;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.mapper.CategoryMapper;
 import com.pos.repository.CategoryRepository;
 import com.pos.service.CategoryService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
+@Transactional(readOnly = true)
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
@@ -24,10 +27,9 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<CategoryResponse> getAllCategories() {
-        return categoryRepository.findAll().stream()
-                .map(CategoryMapper::toResponse)
-                .collect(Collectors.toList());
+    public Page<CategoryResponse> getAllCategories(Pageable pageable) {
+        return categoryRepository.findAll(pageable)
+                .map(CategoryMapper::toResponse);
     }
 
     @Override
@@ -36,34 +38,51 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
+        if (categoryRepository.existsByNameIgnoreCase(request.getName())) {
+            throw new BusinessException("CATEGORY_NAME_DUPLICATE",
+                    "Danh mục '" + request.getName() + "' đã tồn tại");
+        }
+
         Category category = new Category();
         category.setId(UUID.randomUUID());
-        CategoryMapper.updateEntityFromRequest(category, request);
         Instant now = Instant.now();
         category.setCreatedAt(now);
         category.setUpdatedAt(now);
+        CategoryMapper.updateEntityFromRequest(category, request);
         return CategoryMapper.toResponse(categoryRepository.save(category));
     }
 
     @Override
+    @Transactional
     public CategoryResponse updateCategory(UUID id, CategoryRequest request) {
         Category existing = findCategoryEntity(id);
+
+        if (categoryRepository.existsByNameIgnoreCaseAndIdNot(
+                request.getName(), id)) {
+            throw new BusinessException("CATEGORY_NAME_DUPLICATE",
+                    "Danh mục '" + request.getName() + "' đã được sử dụng");
+        }
+
         CategoryMapper.updateEntityFromRequest(existing, request);
         existing.setUpdatedAt(Instant.now());
         return CategoryMapper.toResponse(categoryRepository.save(existing));
     }
 
     @Override
+    @Transactional
     public void deleteCategory(UUID id) {
         if (!categoryRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Danh mục không tồn tại");
+            throw new ResourceNotFoundException(
+                    "Danh mục không tồn tại: " + id);
         }
         categoryRepository.deleteById(id);
     }
 
     private Category findCategoryEntity(UUID id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tìm thấy"));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Danh mục không tồn tại: " + id));
     }
 }
