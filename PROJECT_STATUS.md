@@ -36,7 +36,13 @@ Có các controller chính sau:
 - `SaleInvoiceController`
 - `UserController`
 
-#### 2.1.3 Entity và repository
+#### 2.1.3 DTO, validation và RBAC
+- Backend đã có request/response DTO cho ít nhất `Product`, `Category`, `Supplier`, `Branch`.
+- Endpoint đã sử dụng `@Valid` và `@PreAuthorize` để phân quyền theo role.
+- Các API cơ bản đã được chuẩn hóa theo layer:
+  - Controller → Request DTO → Service → Response DTO.
+
+#### 2.1.4 Entity và repository
 Các entity cơ bản trong backend đã có:
 - `User`
 - `Role`
@@ -54,7 +60,7 @@ Các entity cơ bản trong backend đã có:
 
 Repository và service interface/impl cũng hiện diện cho hầu hết các module.
 
-#### 2.1.4 Cấu hình và công cụ
+#### 2.1.5 Cấu hình và công cụ
 - `application.yml` đã tồn tại với cấu hình datasource, JWT, Flyway.
 - `Flyway` đã cấu hình trong dự án.
 - Swagger/OpenAPI đã được tích hợp qua config.
@@ -83,19 +89,14 @@ Repository và service interface/impl cũng hiện diện cho hầu hết các m
 - `LoginPage` đã có form đăng nhập hoạt động.
 
 #### 2.2.3 Module frontend hiện có
-- `ProductsPage` đã có kết nối `useQuery` và hiển thị danh sách sản phẩm.
-- Các page khác đã tồn tại dưới dạng placeholder:
-  - `CategoriesPage`
-  - `BranchesPage`
-  - `SuppliersPage`
-  - `InventoryPage`
-  - `PurchaseOrdersPage`
-  - `ReportsPage`
-  - `PosPage`
-  - `DashboardPage`
+- `ProductsPage` đã có CRUD danh sách sản phẩm với React Query và form.
+- `CategoriesPage` đã có CRUD danh mục với `React Hook Form`, list, sửa, xóa.
+- `BranchesPage` đã có CRUD chi nhánh với form, edit/delete và validation cơ bản.
+- `SuppliersPage` có cấu trúc tương tự và đang tiến gần đến CRUD hoàn thiện.
+- `InventoryPage`, `PurchaseOrdersPage`, `ReportsPage`, `PosPage`, `DashboardPage` vẫn cần hoàn thiện UX và data thực tế.
 
 #### 2.2.4 Service layer
-Frontend đã có service module:
+Frontend đã có module service:
 - `authService.ts`
 - `productService.ts`
 - `categoryService.ts`
@@ -113,39 +114,40 @@ Frontend đã có service module:
 - REST API auth đã sẵn sàng.
 - Frontend route bảo mật cơ bản đã xây dựng.
 - Entity backend cơ bản đã hiện diện.
-- Service và controller nhiều module đã xuất hiện.
-- Frontend đã có auth flow, login page, và hiển thị sản phẩm.
+- Backend đã bắt đầu áp dụng DTO, validation và RBAC cho module chính.
+- Frontend CRUD cơ bản cho Categories, Branches, Products đã có form và tương tác API.
+- Các component dùng chung như `DataTable`, `ConfirmModal`, `LoadingSpinner`, `PageHeader` đã hiện hữu.
 
 ### 3.2 Chưa hoàn thành hoặc cần hoàn thiện
 
 #### Backend cần bổ sung
-- Chưa chuẩn hóa DTO request/response trong controller; hiện đang ném trực tiếp entity.
-- Chưa rõ RBAC theo role đã triển khai hoàn toàn chưa; cần kiểm soát `ADMIN`, `MANAGER`, `CASHIER`, `WAREHOUSE_STAFF`.
-- Cần hoàn thiện validation `@Valid` và xử lý errors chi tiết.
-- Cần hoàn thiện logic sale/inventory/purchase order thực tế.
-- Cần thêm endpoint báo cáo và thống kê rõ ràng.
-- Cần thêm unit test / integration test rõ ràng.
+- Cần kiểm tra toàn bộ controller để đảm bảo DTO request/response nhất quán trên mọi module.
+- Hoàn thiện RBAC role/mapping cho `ADMIN`, `MANAGER`, `CASHIER`, `WAREHOUSE_STAFF`.
+- Hoàn thiện logic sale/inventory/purchase order thực tế, bao gồm cập nhật tồn kho khi bán và nhập hàng.
+- Thêm endpoint báo cáo, thống kê, và dashboard backend.
+- Bổ sung unit test / integration test cho API chính.
 
 #### Frontend cần bổ sung
-- Phần lớn pages là placeholder, chưa có form CRUD thực tế.
-- Chưa có React Hook Form + Zod validation.
-- Chưa có dashboard KPI thật sự và chart.
-- Chưa có UI POS đầy đủ.
-- Chưa có các component chuyên dụng như `POSSearchBar`, `InvoiceBuilder`, `StockAlertBadge`, `StockMovementLog`, `ProfitReportChart`, `BranchSelector`.
+- Hoàn thiện UI CRUD cho Suppliers, Products, Categories, Branches và đảm bảo form validation chặt.
+- Hoàn thiện dashboard KPI thật sự và chart hiển thị doanh thu / tồn kho / đơn hàng.
+- Hoàn thiện UI POS, bao gồm chọn sản phẩm, giỏ hàng, thanh toán và in hoá đơn.
+- Cải thiện component chung và tái sử dụng để giảm trùng lặp.
+- Thêm xử lý lỗi và trải nghiệm người dùng khi API trả về lỗi.
 
 ## 4. Tổng kết
 
 ### Hiện trạng
-Dự án hiện đã có nền tảng rất tốt cho một hệ thống POS + quản lý tồn kho:
-- Backend đã có module dữ liệu và auth cơ bản.
-- Frontend đã có route và auth state framework.
+Dự án đã đi qua giai đoạn nền tảng của tuần 1 và đã đạt được:
+- Backend có auth, controller, DTO, service, repo và Flyway.
+- Frontend có route bảo mật, login flow và CRUD cơ bản cho một số module.
+- Nền tảng cho dashboard, POS và báo cáo đã được thiết lập.
 
-### Cần tập trung tiếp theo
-1. Hoàn thiện backend CRUD đúng chuẩn DTO + validation.
-2. Hoàn thiện RBAC và logic nghiệp vụ: sale, nhập kho, điều chỉnh tồn kho.
-3. Hoàn thiện frontend CRUD cho module branch/category/supplier/product.
-4. Xây page báo cáo, dashboard và POS thực tế.
-5. Viết test và hoàn chỉnh Swagger/API docs.
+### Cần tập trung tuần 2
+1. Hoàn thiện backend CRUD cho `Product`, `Supplier`, `Branch`, `Category` và chuẩn hóa DTO.
+2. Hoàn thiện logic nghiệp vụ `SaleInvoice`, `PurchaseOrder`, `InventoryTransaction` và báo cáo.
+3. Hoàn thiện frontend CRUD hoàn chỉnh cho các module dữ liệu chính.
+4. Xây dashboard KPI, POS page và báo cáo tương tác.
+5. Tăng cường test, xử lý lỗi và document Swagger/API.
 
 ---
 
