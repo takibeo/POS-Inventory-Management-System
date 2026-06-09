@@ -11,7 +11,7 @@ import {
 import { DataTable, type DataTableColumn, LoadingSpinner, PageHeader, StatCard } from '../components/ui';
 import productService from '../services/productService';
 import reportService from '../services/reportService';
-import type { BestSeller, LowStockItem } from '../types/report';
+import type { BestSeller, LowStockItem, ProfitReportResponse, RevenueReportResponse } from '../types/report';
 
 const formatCurrency = (value: number) =>
   value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
@@ -27,20 +27,20 @@ export default function DashboardPage() {
     ],
   });
 
-  const revenueData = revenueQuery.data ?? [];
-  const profitData = profitQuery.data ?? [];
+  const revenueData = revenueQuery.data as RevenueReportResponse | undefined;
+  const profitData = profitQuery.data as ProfitReportResponse | undefined;
   const bestSellers = bestSellersQuery.data ?? [];
   const lowStock = lowStockQuery.data ?? [];
   const products = productsQuery.data ?? [];
 
-  const totalRevenue = revenueData.reduce((sum, item) => sum + item.revenue, 0);
-  const totalProfit = profitData.reduce((sum, item) => sum + item.profit, 0);
+  const totalRevenue = revenueData?.totalRevenue ?? 0;
+  const totalProfit = profitData?.totalProfit ?? 0;
   const activeProducts = products.filter((p) => p.isActive).length;
   const reportsUnavailable =
     revenueQuery.isError && profitQuery.isError && bestSellersQuery.isError && lowStockQuery.isError;
 
-  const chartData = revenueData.length > 0 ? revenueData : profitData;
-  const chartLabel = revenueData.length > 0 ? 'revenue' : 'profit';
+  const chartData: { date: string; revenue?: number; profit?: number }[] = [];
+  const chartLabel = 'revenue';
 
   const bestSellerColumns: DataTableColumn<BestSeller>[] = [
     { key: 'productName', header: 'Sản phẩm' },
