@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api';
 const ACCESS_TOKEN_KEY = 'pos_access_token';
@@ -30,6 +31,8 @@ axiosInstance.interceptors.response.use(
       if (!refreshToken) {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
+        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        window.location.href = '/login';
         return Promise.reject(error);
       }
 
@@ -49,8 +52,15 @@ axiosInstance.interceptors.response.use(
       } catch (refreshError) {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
+        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        window.location.href = '/login';
         return Promise.reject(refreshError);
       }
+    }
+
+    if (responseStatus === 403) {
+      const message = error.response?.data?.message || 'Bạn không có quyền truy cập.';
+      toast.error(message);
     }
 
     return Promise.reject(error);
