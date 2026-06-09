@@ -1,13 +1,14 @@
 package com.pos.service;
 
-import com.pos.entity.SaleInvoice;
+import com.pos.dto.request.SaleInvoiceRequest;
+import com.pos.dto.response.SaleInvoiceResponse;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface SaleInvoiceService {
-    List<SaleInvoice> getAllSales();
-    SaleInvoice getSaleById(UUID id);
-    SaleInvoice createSale(SaleInvoice saleInvoice);
+    List<SaleInvoiceResponse> getAllSales();
+    SaleInvoiceResponse getSaleById(UUID id);
+    SaleInvoiceResponse createSale(SaleInvoiceRequest saleInvoiceRequest);
     void deleteSale(UUID id);
 }
