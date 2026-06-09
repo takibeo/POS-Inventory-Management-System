@@ -1,14 +1,15 @@
 package com.pos.service;
 
-import com.pos.entity.PurchaseOrder;
+import com.pos.dto.request.PurchaseOrderRequest;
+import com.pos.dto.response.PurchaseOrderResponse;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface PurchaseOrderService {
-    List<PurchaseOrder> getAllPurchaseOrders();
-    PurchaseOrder getPurchaseOrderById(UUID id);
-    PurchaseOrder createPurchaseOrder(PurchaseOrder purchaseOrder);
-    PurchaseOrder updatePurchaseOrder(UUID id, PurchaseOrder purchaseOrder);
-    PurchaseOrder receivePurchaseOrder(UUID id);
+    List<PurchaseOrderResponse> getAllPurchaseOrders();
+    PurchaseOrderResponse getPurchaseOrderById(UUID id);
+    PurchaseOrderResponse createPurchaseOrder(PurchaseOrderRequest purchaseOrderRequest);
+    PurchaseOrderResponse updatePurchaseOrder(UUID id, PurchaseOrderRequest purchaseOrderRequest);
+    PurchaseOrderResponse receivePurchaseOrder(UUID id);
 }
