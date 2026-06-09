@@ -8,6 +8,21 @@ export interface ProfitReport {
   profit: number;
 }
 
+export interface RevenueReportResponse {
+  totalRevenue: number;
+  totalTax: number;
+  totalDiscount: number;
+  totalOrders: number;
+  totalItems: number;
+}
+
+export interface ProfitReportResponse {
+  totalRevenue: number;
+  totalCost: number;
+  totalProfit: number;
+  totalOrders: number;
+}
+
 export interface BestSeller {
   productName: string;
   quantitySold: number;
