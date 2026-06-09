@@ -13,7 +13,9 @@ export interface TokenResponse {
 export interface AuthContextType {
   accessToken: string | null;
   isAuthenticated: boolean;
+  roles: string[];
   loading: boolean;
   login: (payload: LoginPayload) => Promise<TokenResponse>;
   logout: () => void;
+  hasRole: (role: string) => boolean;
 }

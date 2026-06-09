@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 const links = [
   { path: '/dashboard', label: 'Dashboard' },
@@ -13,10 +14,22 @@ const links = [
 ];
 
 export default function Sidebar() {
+  const { hasRole } = useAuth();
+
+  const visibleLinks = links.filter((link) => {
+    if (link.path === '/branches' || link.path === '/reports') {
+      return hasRole('ADMIN') || hasRole('MANAGER');
+    }
+    if (link.path === '/inventory' || link.path === '/purchase-orders') {
+      return hasRole('ADMIN') || hasRole('MANAGER') || hasRole('WAREHOUSE');
+    }
+    return true;
+  });
+
   return (
     <aside className="w-64 shrink-0 border-r border-slate-200 bg-white p-4">
       <nav className="space-y-2">
-        {links.map((link) => (
+        {visibleLinks.map((link) => (
           <NavLink
             key={link.path}
             to={link.path}

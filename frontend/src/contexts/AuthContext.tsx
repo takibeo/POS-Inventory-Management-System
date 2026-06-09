@@ -4,6 +4,27 @@ import type { AuthContextType, LoginPayload, TokenResponse } from '../types/auth
 import authService from '../services/authService';
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '../api/axiosInstance';
 
+function parseTokenRoles(token: string | null): string[] {
+  if (!token) return [];
+
+  try {
+    const payloadBase64 = token.split('.')[1];
+    const payloadJson = decodeURIComponent(
+      atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'))
+        .split('')
+        .map((c) => `%${('00' + c.charCodeAt(0).toString(16)).slice(-2)}`)
+        .join('')
+    );
+    const payload = JSON.parse(payloadJson);
+    if (!Array.isArray(payload.roles)) {
+      return [];
+    }
+    return payload.roles.map((role: string) => role.replace(/^ROLE_/, ''));
+  } catch {
+    return [];
+  }
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -11,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.getItem(ACCESS_TOKEN_KEY)
   );
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(accessToken));
+  const [roles, setRoles] = useState<string[]>(parseTokenRoles(accessToken));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,12 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(ACCESS_TOKEN_KEY, token.accessToken);
         localStorage.setItem(REFRESH_TOKEN_KEY, token.refreshToken);
         setAccessToken(token.accessToken);
+        setRoles(parseTokenRoles(token.accessToken));
         setIsAuthenticated(true);
       } catch (error) {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         setAccessToken(null);
         setIsAuthenticated(false);
+        setRoles([]);
       } finally {
         setLoading(false);
       }
@@ -45,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(ACCESS_TOKEN_KEY, token.accessToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, token.refreshToken);
     setAccessToken(token.accessToken);
+    setRoles(parseTokenRoles(token.accessToken));
     setIsAuthenticated(true);
     return token;
   };
@@ -63,12 +88,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     setAccessToken(null);
     setIsAuthenticated(false);
+    setRoles([]);
   };
 
   const value = useMemo(
-    () => ({ accessToken, isAuthenticated, loading, login, logout }),
-    [accessToken, isAuthenticated, loading]
+    () => ({ accessToken, isAuthenticated, roles, loading, login, logout, hasRole }),
+    [accessToken, isAuthenticated, loading, roles]
   );
+
+  function hasRole(role: string) {
+    return roles.includes(role) || roles.includes(`ROLE_${role}`);
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
