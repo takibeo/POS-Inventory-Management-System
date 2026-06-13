@@ -1,8 +1,218 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { DataTable, type DataTableColumn, PageHeader } from '../components/ui';
+import reportService from '../services/reportService';
+import type { BestSeller, LowStockItem } from '../types/report';
+
+const formatCurrency = (v: number) =>
+    v.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+
+type ReportTab = 'revenue' | 'profit' | 'best-sellers' | 'low-stock';
+
+const tabs: { key: ReportTab; label: string }[] = [
+    { key: 'revenue', label: 'Doanh thu' },
+    { key: 'profit', label: 'Lợi nhuận' },
+    { key: 'best-sellers', label: 'Bán chạy' },
+    { key: 'low-stock', label: 'Tồn kho thấp' },
+];
+
 export default function ReportsPage() {
-  return (
-    <div>
-      <h2 className="text-2xl font-semibold mb-4">Báo cáo</h2>
-      <p>Trang xem báo cáo doanh thu, lợi nhuận, bán chạy và tồn kho.</p>
-    </div>
-  );
+    const [activeTab, setActiveTab] = useState<ReportTab>('revenue');
+
+    const revenueQuery = useQuery({
+        queryKey: ['reports', 'revenue'],
+        queryFn: reportService.getRevenueReport,
+        retry: false,
+    });
+
+    const profitQuery = useQuery({
+        queryKey: ['reports', 'profit'],
+        queryFn: reportService.getProfitReport,
+        retry: false,
+    });
+
+    const bestSellersQuery = useQuery({
+        queryKey: ['reports', 'best-sellers'],
+        queryFn: reportService.getBestSellers,
+        retry: false,
+    });
+
+    const lowStockQuery = useQuery({
+        queryKey: ['reports', 'low-stock'],
+        queryFn: reportService.getLowStock,
+        retry: false,
+    });
+
+    const bestSellerColumns: DataTableColumn<BestSeller>[] = [
+        { key: 'productName', header: 'Tên sản phẩm' },
+        {
+            key: 'quantitySold', header: 'Số lượng đã bán',
+            render: (r) => (
+                <span className="font-semibold text-slate-900">
+          {r.quantitySold.toLocaleString()}
+        </span>
+            ),
+        },
+    ];
+
+    const lowStockColumns: DataTableColumn<LowStockItem>[] = [
+        { key: 'productName', header: 'Tên sản phẩm' },
+        {
+            key: 'quantity', header: 'Tồn hiện tại',
+            render: (r) => (
+                <span className={`font-semibold ${
+                    r.quantity <= r.reorderLevel ? 'text-red-600' : 'text-slate-900'
+                }`}>
+          {r.quantity}
+        </span>
+            ),
+        },
+        { key: 'reorderLevel', header: 'Mức đặt lại' },
+        {
+            key: 'status', header: 'Trạng thái',
+            render: (r) => (
+                <span className={`ui-badge ${
+                    r.quantity <= r.reorderLevel ? 'ui-badge-red' : 'ui-badge-green'
+                }`}>
+          {r.quantity <= r.reorderLevel ? 'Cần nhập' : 'Ổn định'}
+        </span>
+            ),
+        },
+    ];
+
+    return (
+        <div className="space-y-6">
+            <PageHeader
+                title="Báo cáo"
+                description="Doanh thu, lợi nhuận, sản phẩm bán chạy và tồn kho thấp."
+            />
+
+            {/* Tab bar */}
+            <div className="flex gap-1 rounded-xl border border-slate-200
+        bg-slate-50 p-1 w-fit">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.key}
+                        type="button"
+                        onClick={() => setActiveTab(tab.key)}
+                        className={`rounded-lg px-4 py-2 text-sm font-medium transition
+              ${activeTab === tab.key
+                            ? 'bg-white text-slate-900 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Revenue tab */}
+            {activeTab === 'revenue' && (
+                <div className="ui-card space-y-4">
+                    <h3 className="text-lg font-semibold">Tổng quan doanh thu</h3>
+                    {revenueQuery.isLoading ? (
+                        <p className="text-sm text-slate-500">Đang tải...</p>
+                    ) : revenueQuery.isError ? (
+                        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+                            API chưa sẵn sàng. Backend cần triển khai{' '}
+                            <code className="font-mono">GET /api/reports/revenue</code>
+                        </p>
+                    ) : (
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="rounded-xl bg-slate-50 p-4">
+                                <p className="text-xs text-slate-500">Tổng doanh thu</p>
+                                <p className="mt-1 text-xl font-bold text-slate-900">
+                                    {formatCurrency(revenueQuery.data?.totalRevenue ?? 0)}
+                                </p>
+                            </div>
+                            <div className="rounded-xl bg-slate-50 p-4">
+                                <p className="text-xs text-slate-500">Số đơn hàng</p>
+                                <p className="mt-1 text-xl font-bold text-slate-900">
+                                    {revenueQuery.data?.totalOrders ?? 0}
+                                </p>
+                            </div>
+                            <div className="rounded-xl bg-slate-50 p-4">
+                                <p className="text-xs text-slate-500">Tổng sản phẩm bán</p>
+                                <p className="mt-1 text-xl font-bold text-slate-900">
+                                    {revenueQuery.data?.totalItems ?? 0}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Profit tab */}
+            {activeTab === 'profit' && (
+                <div className="ui-card space-y-4">
+                    <h3 className="text-lg font-semibold">Tổng quan lợi nhuận</h3>
+                    {profitQuery.isLoading ? (
+                        <p className="text-sm text-slate-500">Đang tải...</p>
+                    ) : profitQuery.isError ? (
+                        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+                            API chưa sẵn sàng. Backend cần triển khai{' '}
+                            <code className="font-mono">GET /api/reports/profit</code>
+                        </p>
+                    ) : (
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            <div className="rounded-xl bg-slate-50 p-4">
+                                <p className="text-xs text-slate-500">Tổng doanh thu</p>
+                                <p className="mt-1 text-xl font-bold text-slate-900">
+                                    {formatCurrency(profitQuery.data?.totalRevenue ?? 0)}
+                                </p>
+                            </div>
+                            <div className="rounded-xl bg-emerald-50 p-4">
+                                <p className="text-xs text-slate-500">Lợi nhuận</p>
+                                <p className="mt-1 text-xl font-bold text-emerald-700">
+                                    {formatCurrency(profitQuery.data?.totalProfit ?? 0)}
+                                </p>
+                            </div>
+                            <div className="rounded-xl bg-red-50 p-4">
+                                <p className="text-xs text-slate-500">Chi phí</p>
+                                <p className="mt-1 text-xl font-bold text-red-600">
+                                    {formatCurrency(profitQuery.data?.totalCost ?? 0)}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Best sellers tab */}
+            {activeTab === 'best-sellers' && (
+                <div className="ui-card">
+                    <h3 className="mb-4 text-lg font-semibold">Sản phẩm bán chạy</h3>
+                    <DataTable
+                        columns={bestSellerColumns}
+                        data={bestSellersQuery.data ?? []}
+                        rowKey={(r) => r.productName}
+                        isLoading={bestSellersQuery.isLoading}
+                        error={bestSellersQuery.isError
+                            ? 'API chưa sẵn sàng: GET /api/reports/best-sellers'
+                            : null}
+                        emptyTitle="Chưa có dữ liệu"
+                        emptyDescription="Chưa có hóa đơn nào được tạo."
+                    />
+                </div>
+            )}
+
+            {/* Low stock tab */}
+            {activeTab === 'low-stock' && (
+                <div className="ui-card">
+                    <h3 className="mb-4 text-lg font-semibold">Tồn kho thấp</h3>
+                    <DataTable
+                        columns={lowStockColumns}
+                        data={lowStockQuery.data ?? []}
+                        rowKey={(r) => r.productName}
+                        isLoading={lowStockQuery.isLoading}
+                        error={lowStockQuery.isError
+                            ? 'API chưa sẵn sàng: GET /api/reports/low-stock'
+                            : null}
+                        emptyTitle="Không có cảnh báo"
+                        emptyDescription="Tất cả sản phẩm đều trên mức đặt lại."
+                    />
+                </div>
+            )}
+        </div>
+    );
 }
