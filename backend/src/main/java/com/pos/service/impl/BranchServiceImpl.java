@@ -57,13 +57,13 @@ public class BranchServiceImpl implements BranchService {
     @Override
     public void deleteBranch(UUID id) {
         if (!branchRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Branch not found");
+            throw new ResourceNotFoundException("Chi nhánh không tồn tại");
         }
         branchRepository.deleteById(id);
     }
 
     private Branch findBranchEntity(UUID id) {
         return branchRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Chi nhánh không tìm thấy"));
     }
 }
