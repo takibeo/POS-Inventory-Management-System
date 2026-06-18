@@ -3,8 +3,10 @@ package com.pos.service.impl;
 import com.pos.dto.request.LoginRequest;
 import com.pos.dto.request.RefreshTokenRequest;
 import com.pos.dto.response.TokenResponse;
+import com.pos.dto.response.UserResponse;
 import com.pos.entity.RefreshToken;
 import com.pos.entity.User;
+import com.pos.mapper.UserMapper;
 import com.pos.repository.UserRepository;
 import com.pos.service.AuthService;
 import com.pos.service.RefreshTokenService;
@@ -59,5 +61,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void logout(RefreshTokenRequest request) {
         refreshTokenService.revokeRefreshToken(request.refreshToken());
+    }
+
+    @Override
+    public UserResponse getCurrentUser(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return UserMapper.toResponse(user);
     }
 }

@@ -39,6 +39,4 @@ public class Branch {
 
     public Branch() {
     }
-
-    // getters and setters omitted for brevity
 }

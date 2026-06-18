@@ -4,7 +4,10 @@ import com.pos.dto.request.SupplierRequest;
 import com.pos.dto.response.SupplierResponse;
 import com.pos.entity.Supplier;
 
-public class SupplierMapper {
+public final class SupplierMapper {
+
+    private SupplierMapper() {
+    }
 
     public static SupplierResponse toResponse(Supplier supplier) {
         if (supplier == null) {

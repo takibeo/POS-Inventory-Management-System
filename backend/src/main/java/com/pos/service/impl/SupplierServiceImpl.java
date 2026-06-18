@@ -56,10 +56,7 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public void deleteSupplier(UUID id) {
-        if (!supplierRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Nhà cung cấp không tồn tại");
-        }
-        supplierRepository.deleteById(id);
+        supplierRepository.delete(findSupplierEntity(id));
     }
 
     private Supplier findSupplierEntity(UUID id) {

@@ -56,10 +56,7 @@ public class BranchServiceImpl implements BranchService {
 
     @Override
     public void deleteBranch(UUID id) {
-        if (!branchRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Branch not found");
-        }
-        branchRepository.deleteById(id);
+        branchRepository.delete(findBranchEntity(id));
     }
 
     private Branch findBranchEntity(UUID id) {

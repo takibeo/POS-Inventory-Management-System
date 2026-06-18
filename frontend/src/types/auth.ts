@@ -10,6 +10,17 @@ export interface TokenResponse {
   expiresIn: number;
 }
 
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  fullName?: string;
+  status: string;
+  roles: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface AuthContextType {
   accessToken: string | null;
   isAuthenticated: boolean;
