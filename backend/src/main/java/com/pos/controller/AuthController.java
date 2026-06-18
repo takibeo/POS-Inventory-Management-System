@@ -3,13 +3,17 @@ package com.pos.controller;
 import com.pos.dto.request.LoginRequest;
 import com.pos.dto.request.RefreshTokenRequest;
 import com.pos.dto.response.TokenResponse;
+import com.pos.dto.response.UserResponse;
 import com.pos.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -35,5 +39,10 @@ public class AuthController {
     public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
         authService.logout(request);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> me(Principal principal) {
+        return ResponseEntity.ok(authService.getCurrentUser(principal.getName()));
     }
 }

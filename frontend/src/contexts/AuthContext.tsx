@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { AuthContextType, LoginPayload, TokenResponse } from '../types/auth';
+import type { AuthContextType, LoginPayload, TokenResponse, User } from '../types/auth';
 import authService from '../services/authService';
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '../api/axiosInstance';
 
@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(accessToken));
   const [roles, setRoles] = useState<string[]>(parseTokenRoles(accessToken));
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -50,12 +51,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(token.accessToken);
         setRoles(parseTokenRoles(token.accessToken));
         setIsAuthenticated(true);
+        const user = await authService.getCurrentUser();
+        setCurrentUser(user);
       } catch (error) {
         localStorage.removeItem(ACCESS_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         setAccessToken(null);
         setIsAuthenticated(false);
         setRoles([]);
+        setCurrentUser(null);
       } finally {
         setLoading(false);
       }
@@ -71,6 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(token.accessToken);
     setRoles(parseTokenRoles(token.accessToken));
     setIsAuthenticated(true);
+    const user = await authService.getCurrentUser();
+    setCurrentUser(user);
     return token;
   };
 
@@ -89,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setIsAuthenticated(false);
     setRoles([]);
+    setCurrentUser(null);
   };
 
   const value = useMemo(
