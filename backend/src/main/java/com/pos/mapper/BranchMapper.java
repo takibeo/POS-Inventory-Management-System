@@ -4,10 +4,15 @@ import com.pos.dto.request.BranchRequest;
 import com.pos.dto.response.BranchResponse;
 import com.pos.entity.Branch;
 
-public class BranchMapper {
+public final class BranchMapper {
+
+    private BranchMapper() {
+    }
 
     public static BranchResponse toResponse(Branch branch) {
-        if (branch == null) return null;
+        if (branch == null) {
+            return null;
+        }
         BranchResponse resp = new BranchResponse();
         resp.setId(branch.getId());
         resp.setName(branch.getName());
