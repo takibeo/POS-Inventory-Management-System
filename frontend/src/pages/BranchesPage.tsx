@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import {
+  Button,
+  ConfirmModal,
+  DataTable,
+  type DataTableColumn,
+  PageHeader,
+  TableRowActions,
+} from '../components/ui';
 import branchService from '../services/branchService';
 import type { Branch } from '../types/branch';
 
@@ -21,7 +30,7 @@ const defaultValues: BranchFormValues = {
 export default function BranchesPage() {
   const queryClient = useQueryClient();
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Branch | null>(null);
 
   const { data: branches, isLoading, isError } = useQuery<Branch[], Error>({
     queryKey: ['branches'],
@@ -34,11 +43,9 @@ export default function BranchesPage() {
       queryClient.invalidateQueries({ queryKey: ['branches'] });
       reset(defaultValues);
       setEditingBranch(null);
-      setMessage('Tạo chi nhánh thành công.');
+      toast.success('Tạo chi nhánh thành công.');
     },
-    onError: () => {
-      setMessage('Không thể tạo chi nhánh. Vui lòng thử lại.');
-    },
+    onError: () => toast.error('Không thể tạo chi nhánh.'),
   });
 
   const updateMutation = useMutation({
@@ -48,22 +55,19 @@ export default function BranchesPage() {
       queryClient.invalidateQueries({ queryKey: ['branches'] });
       reset(defaultValues);
       setEditingBranch(null);
-      setMessage('Cập nhật chi nhánh thành công.');
+      toast.success('Cập nhật chi nhánh thành công.');
     },
-    onError: () => {
-      setMessage('Không thể cập nhật chi nhánh. Vui lòng thử lại.');
-    },
+    onError: () => toast.error('Không thể cập nhật chi nhánh.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: branchService.deleteBranch,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branches'] });
-      setMessage('Xóa chi nhánh thành công.');
+      setDeleteTarget(null);
+      toast.success('Xóa chi nhánh thành công.');
     },
-    onError: () => {
-      setMessage('Không thể xóa chi nhánh. Vui lòng thử lại.');
-    },
+    onError: () => toast.error('Không thể xóa chi nhánh.'),
   });
 
   const {
@@ -89,147 +93,106 @@ export default function BranchesPage() {
     setValue('code', branch.code);
     setValue('address', branch.address ?? '');
     setValue('phone', branch.phone ?? '');
-    setMessage(null);
   };
 
   const handleCancel = () => {
     setEditingBranch(null);
     reset(defaultValues);
-    setMessage(null);
   };
 
-  const handleDelete = (id: string) => {
-    if (window.confirm('Bạn có chắc muốn xóa chi nhánh này?')) {
-      deleteMutation.mutate(id);
-    }
-  };
+  const columns: DataTableColumn<Branch>[] = [
+    { key: 'name', header: 'Tên' },
+    { key: 'code', header: 'Mã' },
+    { key: 'address', header: 'Địa chỉ', render: (row) => row.address ?? '—' },
+    { key: 'phone', header: 'Điện thoại', render: (row) => row.phone ?? '—' },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold">Quản lý chi nhánh</h2>
-          <p className="text-sm text-slate-500">Tạo, sửa và xóa chi nhánh.</p>
-        </div>
-      </div>
+      <PageHeader title="Quản lý chi nhánh" description="Tạo, sửa và xóa chi nhánh." />
 
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4">{editingBranch ? 'Sửa chi nhánh' : 'Thêm chi nhánh mới'}</h3>
+        <div className="ui-card">
+          <h3 className="mb-4 text-lg font-semibold">
+            {editingBranch ? 'Sửa chi nhánh' : 'Thêm chi nhánh mới'}
+          </h3>
 
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Tên chi nhánh</label>
+              <label className="ui-label">Tên chi nhánh</label>
               <input
                 type="text"
                 {...register('name', { required: 'Tên chi nhánh là bắt buộc' })}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
+                className="ui-input"
               />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Mã chi nhánh</label>
+              <label className="ui-label">Mã chi nhánh</label>
               <input
                 type="text"
                 {...register('code', { required: 'Mã chi nhánh là bắt buộc' })}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
+                className="ui-input"
               />
               {errors.code && <p className="mt-1 text-sm text-red-600">{errors.code.message}</p>}
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Địa chỉ</label>
-              <input
-                type="text"
-                {...register('address')}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
-              />
+              <label className="ui-label">Địa chỉ</label>
+              <input type="text" {...register('address')} className="ui-input" />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Điện thoại</label>
-              <input
-                type="text"
-                {...register('phone')}
-                className="w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2 text-sm outline-none transition focus:border-slate-900 focus:bg-white"
-              />
+              <label className="ui-label">Điện thoại</label>
+              <input type="text" {...register('phone')} className="ui-input" />
             </div>
 
             <div className="flex flex-wrap gap-3 pt-2">
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {editingBranch ? 'Cập nhật' : 'Tạo chi nhánh'}
-              </button>
+              </Button>
               {editingBranch && (
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
-                >
+                <Button type="button" variant="secondary" onClick={handleCancel}>
                   Hủy
-                </button>
+                </Button>
               )}
             </div>
           </form>
-
-          {message && <p className="mt-4 text-sm text-slate-700">{message}</p>}
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4">Danh sách chi nhánh</h3>
-
-          {isLoading && <p>Đang tải chi nhánh...</p>}
-          {isError && <p className="text-sm text-red-600">Không thể tải danh sách chi nhánh.</p>}
-
-          {branches && branches.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                <thead className="bg-slate-50 text-slate-600">
-                  <tr>
-                    <th className="px-4 py-3">Tên</th>
-                    <th className="px-4 py-3">Mã</th>
-                    <th className="px-4 py-3">Địa chỉ</th>
-                    <th className="px-4 py-3">Điện thoại</th>
-                    <th className="px-4 py-3">Hành động</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {branches.map((branch) => (
-                    <tr key={branch.id}>
-                      <td className="px-4 py-3">{branch.name}</td>
-                      <td className="px-4 py-3">{branch.code}</td>
-                      <td className="px-4 py-3">{branch.address ?? '—'}</td>
-                      <td className="px-4 py-3">{branch.phone ?? '—'}</td>
-                      <td className="px-4 py-3 space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(branch)}
-                          className="rounded-xl border border-slate-300 bg-white px-3 py-1 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(branch.id)}
-                          className="rounded-xl border border-red-300 bg-red-50 px-3 py-1 text-sm font-semibold text-red-700 transition hover:bg-red-100"
-                        >
-                          Xóa
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            !isLoading && <p>Chưa có chi nhánh nào.</p>
-          )}
+        <div className="ui-card">
+          <h3 className="mb-4 text-lg font-semibold">Danh sách chi nhánh</h3>
+          <DataTable
+            columns={columns}
+            data={branches ?? []}
+            rowKey={(row) => row.id}
+            isLoading={isLoading}
+            error={isError ? 'Không thể tải danh sách chi nhánh.' : null}
+            emptyTitle="Chưa có chi nhánh"
+            emptyDescription="Thêm chi nhánh mới bằng form bên trái."
+            renderActions={(branch) => (
+              <TableRowActions
+                onEdit={() => handleEdit(branch)}
+                onDelete={() => setDeleteTarget(branch)}
+              />
+            )}
+          />
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={!!deleteTarget}
+        title="Xóa chi nhánh"
+        message={`Bạn có chắc muốn xóa chi nhánh "${deleteTarget?.name}"?`}
+        confirmLabel="Xóa"
+        isLoading={deleteMutation.isPending}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+      />
     </div>
   );
 }
