@@ -41,4 +41,22 @@ class SupplierServiceImplTest {
         when(supplierRepository.findById(id)).thenReturn(Optional.empty());
         assertThrows(RuntimeException.class, () -> supplierService.getSupplierById(id));
     }
+
+    @Test
+    void updateSupplierSuccess() {
+        var req = new SupplierRequest(); req.setName("S2");
+        UUID id = UUID.randomUUID();
+        when(supplierRepository.findById(id)).thenReturn(Optional.of(new Supplier()));
+        when(supplierRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        var resp = supplierService.updateSupplier(id, req);
+        assertNotNull(resp);
+        verify(supplierRepository).save(any());
+    }
+
+    @Test
+    void deleteSupplierNotFoundThrows() {
+        UUID id = UUID.randomUUID();
+        when(supplierRepository.findById(id)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> supplierService.deleteSupplier(id));
+    }
 }

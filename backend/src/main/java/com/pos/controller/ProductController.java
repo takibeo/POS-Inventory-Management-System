@@ -54,6 +54,15 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
+    @GetMapping("/search")
+    @Operation(summary = "Tìm kiếm sản phẩm theo tên hoặc SKU")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CASHIER', 'WAREHOUSE')")
+    public ResponseEntity<Page<ProductResponse>> search(
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+        return ResponseEntity.ok(productService.searchProducts(q, pageable));
+    }
+
     @PostMapping
     @Operation(summary = "Tạo sản phẩm mới")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")

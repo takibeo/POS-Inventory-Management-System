@@ -64,4 +64,19 @@ class PurchaseOrderServiceImplTest {
         when(purchaseOrderRepository.findById(poId)).thenReturn(Optional.of(existing));
         assertThrows(BusinessException.class, () -> poService.receivePurchaseOrder(poId));
     }
+
+    @Test
+    void getAllPurchaseOrdersWithFiltersReturnsList() {
+        when(purchaseOrderRepository.findAll()).thenReturn(java.util.List.of(new PurchaseOrder()));
+        var res = poService.getAllPurchaseOrders(null, null);
+        assertNotNull(res);
+        assertFalse(res.isEmpty());
+    }
+
+    @Test
+    void getPurchaseOrderByIdNotFoundThrows() {
+        UUID id = UUID.randomUUID();
+        when(purchaseOrderRepository.findById(id)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> poService.getPurchaseOrderById(id));
+    }
 }

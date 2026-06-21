@@ -28,8 +28,10 @@ public class PurchaseOrderController {
     @GetMapping
     @Operation(summary = "Lấy danh sách đơn nhập kho")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'WAREHOUSE')")
-    public ResponseEntity<List<PurchaseOrderResponse>> getAll() {
-        return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders());
+    public ResponseEntity<List<PurchaseOrderResponse>> getAll(
+            @RequestParam(required = false) java.util.UUID supplierId,
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(purchaseOrderService.getAllPurchaseOrders(supplierId, status));
     }
 
     @GetMapping("/{id}")

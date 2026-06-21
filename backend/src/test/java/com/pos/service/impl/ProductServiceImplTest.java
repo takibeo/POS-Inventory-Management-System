@@ -3,6 +3,7 @@ package com.pos.service.impl;
 import com.pos.dto.request.ProductRequest;
 import com.pos.entity.Category;
 import com.pos.entity.Supplier;
+import com.pos.entity.Product;
 import com.pos.repository.CategoryRepository;
 import com.pos.repository.ProductRepository;
 import com.pos.repository.SupplierRepository;
@@ -54,5 +55,27 @@ class ProductServiceImplTest {
         var req = new ProductRequest(); req.setSku("SKU-1"); req.setName("P1"); req.setPrice(10.0); req.setCost(5.0);
         when(productRepository.existsBySku("SKU-1")).thenReturn(true);
         assertThrows(RuntimeException.class, () -> productService.createProduct(req));
+    }
+
+    @Test
+    void updateProductSuccess() {
+        UUID id = UUID.randomUUID();
+        var req = new ProductRequest(); req.setSku("SKU-2"); req.setName("P2"); req.setPrice(15.0); req.setCost(7.0);
+        org.mockito.Mockito.lenient().when(productRepository.findByIdWithRelations(id)).thenReturn(Optional.of(new Product()));
+        org.mockito.Mockito.lenient().when(productRepository.existsBySkuAndIdNot("SKU-2", id)).thenReturn(false);
+        org.mockito.Mockito.lenient().when(categoryRepository.findById(any())).thenReturn(Optional.of(new Category()));
+        org.mockito.Mockito.lenient().when(supplierRepository.findById(any())).thenReturn(Optional.of(new Supplier()));
+        org.mockito.Mockito.lenient().when(productRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        var resp = productService.updateProduct(id, req);
+        assertNotNull(resp);
+        verify(productRepository).save(any());
+    }
+
+    @Test
+    void deleteProductNotFoundThrows() {
+        UUID id = UUID.randomUUID();
+        when(productRepository.existsById(id)).thenReturn(false);
+        assertThrows(RuntimeException.class, () -> productService.deleteProduct(id));
     }
 }

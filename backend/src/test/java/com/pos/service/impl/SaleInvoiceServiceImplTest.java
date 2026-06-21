@@ -86,4 +86,19 @@ class SaleInvoiceServiceImplTest {
 
         assertThrows(BusinessException.class, () -> saleService.createSale(req));
     }
+
+    @Test
+    void getAllSalesWithFiltersReturnsList() {
+        when(saleInvoiceRepository.findAll()).thenReturn(java.util.List.of(new com.pos.entity.SaleInvoice()));
+        var res = saleService.getAllSales(null, null);
+        assertNotNull(res);
+        assertFalse(res.isEmpty());
+    }
+
+    @Test
+    void getSaleByIdNotFoundThrows() {
+        UUID id = UUID.randomUUID();
+        when(saleInvoiceRepository.findById(id)).thenReturn(Optional.empty());
+        assertThrows(RuntimeException.class, () -> saleService.getSaleById(id));
+    }
 }

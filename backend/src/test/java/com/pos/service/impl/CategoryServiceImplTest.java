@@ -39,4 +39,21 @@ class CategoryServiceImplTest {
         when(categoryRepository.existsByNameIgnoreCase("CAT1")).thenReturn(true);
         assertThrows(RuntimeException.class, () -> categoryService.createCategory(req));
     }
+
+    @Test
+    void updateCategorySuccess() {
+        var req = new CategoryRequest(); req.setName("CAT2");
+        when(categoryRepository.findById(any())).thenReturn(java.util.Optional.of(new com.pos.entity.Category()));
+        when(categoryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        var resp = categoryService.updateCategory(java.util.UUID.randomUUID(), req);
+        assertNotNull(resp);
+        verify(categoryRepository).save(any());
+    }
+
+    @Test
+    void deleteCategoryNotFoundThrows() {
+        java.util.UUID id = java.util.UUID.randomUUID();
+        when(categoryRepository.existsById(id)).thenReturn(false);
+        assertThrows(RuntimeException.class, () -> categoryService.deleteCategory(id));
+    }
 }

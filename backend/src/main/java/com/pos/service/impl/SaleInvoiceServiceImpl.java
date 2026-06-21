@@ -46,9 +46,11 @@ public class SaleInvoiceServiceImpl implements SaleInvoiceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SaleInvoiceResponse> getAllSales() {
-        log.info("SaleInvoiceService.getAllSales called");
+    public List<SaleInvoiceResponse> getAllSales(java.util.UUID branchId, String status) {
+        log.info("SaleInvoiceService.getAllSales called branchId={} status={}", branchId, status);
         return saleInvoiceRepository.findAll().stream()
+                .filter(s -> branchId == null || (s.getBranch() != null && branchId.equals(s.getBranch().getId())))
+                .filter(s -> status == null || status.isBlank() || status.equalsIgnoreCase(s.getStatus()))
                 .map(SaleInvoiceMapper::toResponse)
                 .toList();
     }
