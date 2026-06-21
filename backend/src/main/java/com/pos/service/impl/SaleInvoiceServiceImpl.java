@@ -1,5 +1,7 @@
 package com.pos.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.pos.dto.request.SaleInvoiceItemRequest;
 import com.pos.dto.request.SaleInvoiceRequest;
 import com.pos.dto.response.SaleInvoiceResponse;
@@ -18,6 +20,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
+@Slf4j
 public class SaleInvoiceServiceImpl implements SaleInvoiceService {
 
     private final SaleInvoiceRepository saleInvoiceRepository;
@@ -44,6 +47,7 @@ public class SaleInvoiceServiceImpl implements SaleInvoiceService {
     @Override
     @Transactional(readOnly = true)
     public List<SaleInvoiceResponse> getAllSales() {
+        log.info("SaleInvoiceService.getAllSales called");
         return saleInvoiceRepository.findAll().stream()
                 .map(SaleInvoiceMapper::toResponse)
                 .toList();
@@ -52,12 +56,14 @@ public class SaleInvoiceServiceImpl implements SaleInvoiceService {
     @Override
     @Transactional(readOnly = true)
     public SaleInvoiceResponse getSaleById(UUID id) {
+        log.info("SaleInvoiceService.getSaleById id={}", id);
         return SaleInvoiceMapper.toResponse(saleInvoiceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale invoice not found")));
     }
 
     @Override
     public SaleInvoiceResponse createSale(SaleInvoiceRequest request) {
+        log.info("SaleInvoiceService.createSale branchId={} cashierId={}", request.getBranchId(), request.getCashierId());
         Branch branch = branchRepository.findById(request.getBranchId())
                 .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
         User cashier = userRepository.findById(request.getCashierId())
@@ -149,6 +155,7 @@ public class SaleInvoiceServiceImpl implements SaleInvoiceService {
 
     @Override
     public void deleteSale(UUID id) {
+        log.info("SaleInvoiceService.deleteSale id={}", id);
         if (!saleInvoiceRepository.existsById(id)) {
             throw new ResourceNotFoundException("Sale invoice not found");
         }

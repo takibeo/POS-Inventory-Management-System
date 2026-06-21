@@ -1,5 +1,7 @@
 package com.pos.exception;
 
+import lombok.extern.slf4j.Slf4j;
+
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.HttpHeaders;
@@ -22,6 +24,7 @@ import com.pos.exception.ValidationException;
 import com.pos.exception.AppErrorCodes;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     //1. Validation loi tren @RequestBody (@Valid)

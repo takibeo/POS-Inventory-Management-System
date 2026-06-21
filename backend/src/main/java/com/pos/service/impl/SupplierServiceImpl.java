@@ -1,5 +1,7 @@
 package com.pos.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.pos.dto.request.SupplierRequest;
 import com.pos.dto.response.SupplierResponse;
 import com.pos.entity.Supplier;
@@ -15,6 +17,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class SupplierServiceImpl implements SupplierService {
 
     private final SupplierRepository supplierRepository;
@@ -25,6 +28,7 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public List<SupplierResponse> getAllSuppliers() {
+        log.info("SupplierService.getAllSuppliers called");
         return supplierRepository.findAll().stream()
                 .map(SupplierMapper::toResponse)
                 .collect(Collectors.toList());
@@ -32,11 +36,13 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public SupplierResponse getSupplierById(UUID id) {
+        log.info("SupplierService.getSupplierById id={}", id);
         return SupplierMapper.toResponse(findSupplierEntity(id));
     }
 
     @Override
     public SupplierResponse createSupplier(SupplierRequest request) {
+        log.info("SupplierService.createSupplier name={}", request.getName());
         Supplier supplier = new Supplier();
         supplier.setId(UUID.randomUUID());
         SupplierMapper.updateEntityFromRequest(supplier, request);
@@ -48,6 +54,7 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public SupplierResponse updateSupplier(UUID id, SupplierRequest request) {
+        log.info("SupplierService.updateSupplier id={} name={}", id, request.getName());
         Supplier existing = findSupplierEntity(id);
         SupplierMapper.updateEntityFromRequest(existing, request);
         existing.setUpdatedAt(Instant.now());
@@ -56,6 +63,7 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public void deleteSupplier(UUID id) {
+        log.info("SupplierService.deleteSupplier id={}", id);
         supplierRepository.delete(findSupplierEntity(id));
     }
 

@@ -1,5 +1,7 @@
 package com.pos.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.pos.dto.request.ProductRequest;
 import com.pos.dto.response.ProductResponse;
 import com.pos.entity.Category;
@@ -22,6 +24,7 @@ import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
+@Slf4j
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
@@ -40,6 +43,7 @@ public class ProductServiceImpl implements ProductService {
     public Page<ProductResponse> getAllProducts(UUID categoryId,
                                                 Boolean isActive,
                                                 Pageable pageable) {
+        log.info("ProductService.getAllProducts categoryId={} isActive={} pageable={}", categoryId, isActive, pageable);
         return productRepository
                 .findAllWithFilters(categoryId, isActive, pageable)
                 .map(ProductMapper::toResponse);
@@ -47,6 +51,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponse getProductById(UUID id) {
+        log.info("ProductService.getProductById id={}", id);
         Product product = productRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Sản phẩm không tồn tại: " + id));
@@ -56,6 +61,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
+        log.info("ProductService.createProduct sku={}", request.getSku());
         if (productRepository.existsBySku(request.getSku())) {
             throw new BusinessException("SKU_DUPLICATE",
                     "SKU '" + request.getSku() + "' đã tồn tại");
@@ -78,6 +84,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductResponse updateProduct(UUID id, ProductRequest request) {
+        log.info("ProductService.updateProduct id={} sku={}", id, request.getSku());
         Product existing = productRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Sản phẩm không tồn tại: " + id));
@@ -99,6 +106,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public void deleteProduct(UUID id) {
+        log.info("ProductService.deleteProduct id={}", id);
         if (!productRepository.existsById(id)) {
             throw new ResourceNotFoundException(
                     "Sản phẩm không tồn tại: " + id);
