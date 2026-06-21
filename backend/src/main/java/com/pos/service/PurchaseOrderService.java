@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface PurchaseOrderService {
-    List<PurchaseOrderResponse> getAllPurchaseOrders();
+    List<PurchaseOrderResponse> getAllPurchaseOrders(java.util.UUID supplierId, String status);
     PurchaseOrderResponse getPurchaseOrderById(UUID id);
     PurchaseOrderResponse createPurchaseOrder(PurchaseOrderRequest purchaseOrderRequest);
     PurchaseOrderResponse updatePurchaseOrder(UUID id, PurchaseOrderRequest purchaseOrderRequest);

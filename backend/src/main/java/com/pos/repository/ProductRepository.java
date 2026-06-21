@@ -29,4 +29,11 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
             "LEFT JOIN FETCH p.supplier " +
             "WHERE p.id = :id")
     Optional<Product> findByIdWithRelations(@Param("id") UUID id);
+    @Query("SELECT p FROM Product p " +
+            "LEFT JOIN p.category c " +
+            "LEFT JOIN p.supplier s " +
+            "WHERE (:q IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%',:q,'%')) " +
+            "OR LOWER(p.sku) LIKE LOWER(CONCAT('%',:q,'%'))) ")
+    Page<Product> searchByNameOrSku(@Param("q") String q, Pageable pageable);
+
 }

@@ -13,6 +13,8 @@ public interface ProductService {
                                          Boolean isActive,
                                          Pageable pageable);
 
+    Page<ProductResponse> searchProducts(String q, Pageable pageable);
+
     ProductResponse getProductById(UUID id);
 
     ProductResponse createProduct(ProductRequest request);

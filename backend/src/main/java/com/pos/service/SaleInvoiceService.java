@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface SaleInvoiceService {
-    List<SaleInvoiceResponse> getAllSales();
+    List<SaleInvoiceResponse> getAllSales(java.util.UUID branchId, String status);
     SaleInvoiceResponse getSaleById(UUID id);
     SaleInvoiceResponse createSale(SaleInvoiceRequest saleInvoiceRequest);
     void deleteSale(UUID id);

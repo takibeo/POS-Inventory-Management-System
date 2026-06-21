@@ -50,9 +50,11 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<PurchaseOrderResponse> getAllPurchaseOrders() {
-        log.info("PurchaseOrderService.getAllPurchaseOrders called");
+    public List<PurchaseOrderResponse> getAllPurchaseOrders(java.util.UUID supplierId, String status) {
+        log.info("PurchaseOrderService.getAllPurchaseOrders called supplierId={} status={}", supplierId, status);
         return purchaseOrderRepository.findAll().stream()
+                .filter(po -> supplierId == null || (po.getSupplier() != null && supplierId.equals(po.getSupplier().getId())))
+                .filter(po -> status == null || status.isBlank() || status.equalsIgnoreCase(po.getStatus()))
                 .map(PurchaseOrderMapper::toResponse)
                 .toList();
     }
