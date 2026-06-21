@@ -10,10 +10,10 @@ public class ProductRequest {
     private String sku;
 
     @NotBlank(message = "Tên không được để trống")
-    @Size(max = 200, message = "Tên không vượt quá 100 ký tự")
+    @Size(max = 200, message = "Tên không vượt quá 200 ký tự")
     private String name;
 
-    @Size(max = 2000, message = "Mô tả không vượt quá 100 ký tự")
+    @Size(max = 2000, message = "Mô tả không vượt quá 2000 ký tự")
     private String description;
 
     private UUID categoryId;
