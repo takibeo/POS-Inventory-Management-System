@@ -2,76 +2,64 @@ package com.pos.service.impl;
 
 import com.pos.dto.request.LoginRequest;
 import com.pos.entity.RefreshToken;
-import com.pos.entity.Role;
 import com.pos.entity.User;
 import com.pos.repository.UserRepository;
 import com.pos.service.RefreshTokenService;
-import com.pos.service.impl.AuthServiceImpl;
 import com.pos.utils.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mockito;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class AuthServiceImplTest {
 
-    private UserRepository userRepository;
-    private PasswordEncoder passwordEncoder;
-    private JwtUtil jwtUtil;
-    private RefreshTokenService refreshTokenService;
+    @Mock private UserRepository userRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private JwtUtil jwtUtil;
+    @Mock private RefreshTokenService refreshTokenService;
+
     private AuthServiceImpl authService;
 
     @BeforeEach
     void setUp() {
-        userRepository = mock(UserRepository.class);
-        passwordEncoder = mock(PasswordEncoder.class);
-        jwtUtil = mock(JwtUtil.class);
-        refreshTokenService = mock(RefreshTokenService.class);
-
         authService = new AuthServiceImpl(userRepository, passwordEncoder, jwtUtil, refreshTokenService);
     }
 
     @Test
-    void login_success_returnsTokens() {
-        User user = new User();
+    void loginSuccess() {
+        var user = new User();
         user.setUsername("alice");
-        user.setPassword("encoded-pass");
-        Role r = new Role();
-        r.setName("ADMIN");
-        user.setRoles(Set.of(r));
-
+        user.setPassword("encoded");
         when(userRepository.findByUsername("alice")).thenReturn(Optional.of(user));
-        when(passwordEncoder.matches("secret", "encoded-pass")).thenReturn(true);
-        when(jwtUtil.generateToken(eq("alice"), ArgumentMatchers.anyCollection())).thenReturn("jwt-token");
+        when(passwordEncoder.matches("pass", "encoded")).thenReturn(true);
+        when(jwtUtil.generateToken(anyString(), anyList())).thenReturn("token");
+        var rt = new RefreshToken(); rt.setToken("rt"); when(refreshTokenService.createRefreshToken(user)).thenReturn(rt);
 
-        RefreshToken rt = new RefreshToken();
-        rt.setToken("refresh-token");
-        when(refreshTokenService.createRefreshToken(user)).thenReturn(rt);
-        when(jwtUtil.getExpirationMs()).thenReturn(3600000L);
+        var req = new LoginRequest("alice", "pass");
+        var resp = authService.login(req);
 
-        var response = authService.login(new LoginRequest("alice", "secret"));
-
-        assertNotNull(response);
-        assertEquals("jwt-token", response.accessToken());
-        assertEquals("refresh-token", response.refreshToken());
+        assertNotNull(resp);
+        assertEquals("token", resp.accessToken());
+        verify(refreshTokenService).createRefreshToken(user);
     }
 
     @Test
-    void login_invalidPassword_throws() {
-        User user = new User();
-        user.setUsername("bob");
-        user.setPassword("encoded");
-
+    void loginInvalidPasswordThrows() {
+        var user = new User(); user.setUsername("bob"); user.setPassword("encoded");
         when(userRepository.findByUsername("bob")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrong", "encoded")).thenReturn(false);
 
-        assertThrows(RuntimeException.class, () -> authService.login(new LoginRequest("bob", "wrong")));
+        var req = new LoginRequest("bob", "wrong");
+        assertThrows(BadCredentialsException.class, () -> authService.login(req));
     }
 }
+

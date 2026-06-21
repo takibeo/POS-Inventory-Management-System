@@ -5,18 +5,18 @@ import jakarta.validation.constraints.Size;
 
 public class BranchRequest {
 
-    @NotBlank(message = "Branch name must not be blank")
-    @Size(max = 255, message = "Branch name must not exceed 255 characters")
+    @NotBlank(message = "Tên chi nhánh không được để trống")
+    @Size(max = 255, message = "Tên chi nhánh không vượt quá 255 ký tự")
     private String name;
 
-    @NotBlank(message = "Branch code must not be blank")
-    @Size(max = 100, message = "Branch code must not exceed 100 characters")
+    @NotBlank(message = "Mã chi nhánh không được để trống")
+    @Size(max = 100, message = "Mã chi nhánh không vượt quá 100 ký tự")
     private String code;
 
-    @Size(max = 500, message = "Address must not exceed 500 characters")
+    @Size(max = 500, message = "Địa chỉ không vượt quá 500 ký tự")
     private String address;
 
-    @Size(max = 50, message = "Phone must not exceed 50 characters")
+    @Size(max = 50, message = "Số điện thoại không vượt quá 50 ký tự")
     private String phone;
 
     public BranchRequest() {

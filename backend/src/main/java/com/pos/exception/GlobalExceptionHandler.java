@@ -1,5 +1,7 @@
 package com.pos.exception;
 
+import lombok.extern.slf4j.Slf4j;
+
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.http.HttpHeaders;
@@ -18,7 +20,11 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.pos.exception.ValidationException;
+import com.pos.exception.AppErrorCodes;
+
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     //1. Validation loi tren @RequestBody (@Valid)
@@ -36,7 +42,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorResponse body = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "VALIDATION_ERROR",
+                AppErrorCodes.VALIDATION_ERROR,
                 "Dữ liệu đầu vào không hợp lệ",
                 extractPath(request)
         );
@@ -56,7 +62,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
         ErrorResponse body = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "VALIDATION_ERROR",
+                AppErrorCodes.VALIDATION_ERROR,
                 "Tham số không hợp lệ",
                 extractPath(request)
         );
@@ -70,7 +76,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, WebRequest request){
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                "RESOURCE_NOT_FOUND",
+                AppErrorCodes.RESOURCE_NOT_FOUND,
                 ex.getMessage(),
                 extractPath(request)
         ));
@@ -90,6 +96,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 ));
     }
 
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(
+            ValidationException ex, WebRequest request) {
+
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getErrorCode(),
+                ex.getMessage(),
+                extractPath(request)
+        );
+        body.setFieldErrors(ex.getFieldErrors());
+        return ResponseEntity.badRequest().body(body);
+    }
+
     // 5. Chưa đăng nhập → 401
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthenticationException(
@@ -98,7 +118,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(new ErrorResponse(
                         HttpStatus.UNAUTHORIZED.value(),
-                        "UNAUTHORIZED",
+                        AppErrorCodes.UNAUTHORIZED,
                         "Bạn cần đăng nhập để thực hiện thao tác này",
                         extractPath(request)
                 ));
@@ -112,7 +132,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ErrorResponse(
                         HttpStatus.FORBIDDEN.value(),
-                        "FORBIDDEN",
+                        AppErrorCodes.FORBIDDEN,
                         "Bạn không có quyền thực hiện thao tác này",
                         extractPath(request)
                 ));
@@ -128,10 +148,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse(
                         HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "INTERNAL_ERROR",
+                        AppErrorCodes.INTERNAL_ERROR,
                         "Đã xảy ra lỗi hệ thống, vui lòng thử lại sau",
                         extractPath(request)
                 ));
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+            org.springframework.http.converter.HttpMessageNotReadableException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request) {
+
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                AppErrorCodes.INVALID_JSON,
+                "Yêu cầu JSON không hợp lệ",
+                extractPath(request)
+        );
+        return new ResponseEntity<>(body, headers, status);
     }
 
     private String extractPath(WebRequest request) {

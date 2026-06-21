@@ -1,5 +1,7 @@
 package com.pos.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.pos.entity.RefreshToken;
 import com.pos.entity.User;
 import com.pos.repository.RefreshTokenRepository;
@@ -11,6 +13,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
@@ -23,6 +26,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public RefreshToken createRefreshToken(User user) {
+        log.info("RefreshTokenService.createRefreshToken user={}", user.getUsername());
         RefreshToken refreshToken = new RefreshToken();
         refreshToken.setId(UUID.randomUUID());
         refreshToken.setUser(user);
@@ -35,6 +39,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public RefreshToken verifyRefreshToken(String token) {
+        log.info("RefreshTokenService.verifyRefreshToken token=[PROTECTED]");
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
         if (refreshToken.getRevoked() || refreshToken.getExpiryDate().isBefore(Instant.now())) {
@@ -45,6 +50,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     @Override
     public void revokeRefreshToken(String token) {
+        log.info("RefreshTokenService.revokeRefreshToken token=[PROTECTED]");
         refreshTokenRepository.findByToken(token).ifPresent(refreshToken -> {
             refreshToken.setRevoked(true);
             refreshTokenRepository.save(refreshToken);

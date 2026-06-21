@@ -6,24 +6,24 @@ import jakarta.validation.constraints.Size;
 
 public class SupplierRequest {
 
-    @NotBlank(message = "Supplier name must not be blank")
-    @Size(max = 255, message = "Supplier name must not exceed 255 characters")
+    @NotBlank(message = "Tên nhà cung cấp không được để trống")
+    @Size(max = 255, message = "Tên nhà cung cấp không vượt quá 255 ký tự")
     private String name;
 
-    @Size(max = 255, message = "Contact name must not exceed 255 characters")
+    @Size(max = 255, message = "Tên liên hệ không vượt quá 255 ký tự")
     private String contactName;
 
-    @Size(max = 50, message = "Phone number must not exceed 50 characters")
+    @Size(max = 50, message = "Số điện thoại không vượt quá 50 ký tự")
     private String phone;
 
-    @Email(message = "Invalid email address")
-    @Size(max = 255, message = "Email must not exceed 255 characters")
+    @Email(message = "Email không hợp lệ")
+    @Size(max = 255, message = "Email không vượt quá 255 ký tự")
     private String email;
 
-    @Size(max = 500, message = "Address must not exceed 500 characters")
+    @Size(max = 500, message = "Địa chỉ không vượt quá 500 ký tự")
     private String address;
 
-    @Size(max = 1000, message = "Notes must not exceed 1000 characters")
+    @Size(max = 1000, message = "Ghi chú không vượt quá 1000 ký tự")
     private String notes;
 
     public SupplierRequest() {
