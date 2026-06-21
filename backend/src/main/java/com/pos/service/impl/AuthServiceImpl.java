@@ -1,5 +1,7 @@
 package com.pos.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.pos.dto.request.LoginRequest;
 import com.pos.dto.request.RefreshTokenRequest;
 import com.pos.dto.response.TokenResponse;
@@ -15,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -34,6 +37,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenResponse login(LoginRequest request) {
+        log.info("AuthService.login called username={}", request.username());
         User user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
@@ -49,6 +53,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public TokenResponse refreshToken(RefreshTokenRequest request) {
+        log.info("AuthService.refreshToken called");
         RefreshToken validRefreshToken = refreshTokenService.verifyRefreshToken(request.refreshToken());
         var roles = validRefreshToken.getUser().getRoles().stream().map(r -> "ROLE_" + r.getName()).toList();
         String token = jwtUtil.generateToken(validRefreshToken.getUser().getUsername(), roles);
@@ -60,11 +65,13 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logout(RefreshTokenRequest request) {
+        log.info("AuthService.logout called");
         refreshTokenService.revokeRefreshToken(request.refreshToken());
     }
 
     @Override
     public UserResponse getCurrentUser(String username) {
+        log.info("AuthService.getCurrentUser username={}", username);
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return UserMapper.toResponse(user);

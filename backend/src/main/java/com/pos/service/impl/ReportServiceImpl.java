@@ -1,5 +1,7 @@
 package com.pos.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.pos.dto.response.BestSellerReportResponse;
 import com.pos.dto.response.LowStockReportResponse;
 import com.pos.dto.response.ProfitReportResponse;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
+@Slf4j
 public class ReportServiceImpl implements ReportService {
 
     private final SaleInvoiceRepository saleInvoiceRepository;
@@ -34,6 +37,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public RevenueReportResponse getRevenueReport() {
+        log.info("ReportService.getRevenueReport called");
         List<SaleInvoice> invoices = saleInvoiceRepository.findAll();
 
         double totalRevenue = 0.0;
@@ -69,6 +73,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public ProfitReportResponse getProfitReport() {
+        log.info("ReportService.getProfitReport called");
         List<SaleInvoice> invoices = saleInvoiceRepository.findAll();
 
         double totalRevenue = 0.0;
@@ -97,6 +102,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public List<BestSellerReportResponse> getBestSellers(int limit) {
+        log.info("ReportService.getBestSellers limit={}", limit);
         Map<String, BestSellerReportResponse> productStats = new HashMap<>();
 
         saleInvoiceRepository.findAll().stream()
@@ -135,6 +141,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public List<LowStockReportResponse> getLowStockReport() {
+        log.info("ReportService.getLowStockReport called");
         return inventoryRepository.findAll().stream()
                 .filter(inventory -> inventory.getProduct() != null && inventory.getBranch() != null)
                 .filter(inventory -> {

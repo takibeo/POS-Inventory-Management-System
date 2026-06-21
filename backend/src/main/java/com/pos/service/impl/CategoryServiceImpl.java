@@ -1,5 +1,7 @@
 package com.pos.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.pos.dto.request.CategoryRequest;
 import com.pos.dto.response.CategoryResponse;
 import com.pos.entity.Category;
@@ -18,6 +20,7 @@ import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
+@Slf4j
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
@@ -28,18 +31,21 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Page<CategoryResponse> getAllCategories(Pageable pageable) {
+        log.info("CategoryService.getAllCategories pageable={}", pageable);
         return categoryRepository.findAll(pageable)
                 .map(CategoryMapper::toResponse);
     }
 
     @Override
     public CategoryResponse getCategoryById(UUID id) {
+        log.info("CategoryService.getCategoryById id={}", id);
         return CategoryMapper.toResponse(findCategoryEntity(id));
     }
 
     @Override
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
+        log.info("CategoryService.createCategory request={}", request.getName());
         if (categoryRepository.existsByNameIgnoreCase(request.getName())) {
             throw new BusinessException("CATEGORY_NAME_DUPLICATE",
                     "Danh mục '" + request.getName() + "' đã tồn tại");
@@ -57,6 +63,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryResponse updateCategory(UUID id, CategoryRequest request) {
+        log.info("CategoryService.updateCategory id={} name={}", id, request.getName());
         Category existing = findCategoryEntity(id);
 
         if (categoryRepository.existsByNameIgnoreCaseAndIdNot(
@@ -73,6 +80,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void deleteCategory(UUID id) {
+        log.info("CategoryService.deleteCategory id={}", id);
         if (!categoryRepository.existsById(id)) {
             throw new ResourceNotFoundException(
                     "Danh mục không tồn tại: " + id);

@@ -1,5 +1,7 @@
 package com.pos.service.impl;
 
+import lombok.extern.slf4j.Slf4j;
+
 import com.pos.dto.request.PurchaseOrderItemRequest;
 import com.pos.dto.request.PurchaseOrderRequest;
 import com.pos.dto.response.PurchaseOrderResponse;
@@ -19,6 +21,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
+@Slf4j
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     private final PurchaseOrderRepository purchaseOrderRepository;
@@ -48,6 +51,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     @Override
     @Transactional(readOnly = true)
     public List<PurchaseOrderResponse> getAllPurchaseOrders() {
+        log.info("PurchaseOrderService.getAllPurchaseOrders called");
         return purchaseOrderRepository.findAll().stream()
                 .map(PurchaseOrderMapper::toResponse)
                 .toList();
@@ -56,12 +60,14 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     @Override
     @Transactional(readOnly = true)
     public PurchaseOrderResponse getPurchaseOrderById(UUID id) {
+        log.info("PurchaseOrderService.getPurchaseOrderById id={}", id);
         return PurchaseOrderMapper.toResponse(purchaseOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Purchase order not found")));
     }
 
     @Override
     public PurchaseOrderResponse createPurchaseOrder(PurchaseOrderRequest request) {
+        log.info("PurchaseOrderService.createPurchaseOrder supplierId={} branchId={}", request.getSupplierId(), request.getBranchId());
         Supplier supplier = supplierRepository.findById(request.getSupplierId())
                 .orElseThrow(() -> new ResourceNotFoundException("Supplier not found"));
         Branch branch = branchRepository.findById(request.getBranchId())
@@ -108,6 +114,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     public PurchaseOrderResponse updatePurchaseOrder(UUID id, PurchaseOrderRequest request) {
+        log.info("PurchaseOrderService.updatePurchaseOrder id={}", id);
         PurchaseOrder existing = purchaseOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Purchase order not found"));
 
@@ -150,6 +157,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     public PurchaseOrderResponse receivePurchaseOrder(UUID id) {
+        log.info("PurchaseOrderService.receivePurchaseOrder id={}", id);
         PurchaseOrder existing = purchaseOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Purchase order not found"));
 
