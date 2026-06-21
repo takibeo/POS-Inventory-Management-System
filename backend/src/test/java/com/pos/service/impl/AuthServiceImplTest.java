@@ -9,9 +9,9 @@ import com.pos.utils.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -59,7 +59,7 @@ class AuthServiceImplTest {
         when(passwordEncoder.matches("wrong", "encoded")).thenReturn(false);
 
         var req = new LoginRequest("bob", "wrong");
-        assertThrows(RuntimeException.class, () -> authService.login(req));
+        assertThrows(BadCredentialsException.class, () -> authService.login(req));
     }
 }
 
