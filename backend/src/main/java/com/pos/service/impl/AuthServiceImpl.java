@@ -13,6 +13,7 @@ import com.pos.repository.UserRepository;
 import com.pos.service.AuthService;
 import com.pos.service.RefreshTokenService;
 import com.pos.utils.JwtUtil;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,9 +40,9 @@ public class AuthServiceImpl implements AuthService {
     public TokenResponse login(LoginRequest request) {
         log.info("AuthService.login called username={}", request.username());
         User user = userRepository.findByUsername(request.username())
-                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new RuntimeException("Invalid username or password");
+            throw new BadCredentialsException("Invalid username or password");
         }
 
         var roles = user.getRoles().stream().map(r -> "ROLE_" + r.getName()).toList();

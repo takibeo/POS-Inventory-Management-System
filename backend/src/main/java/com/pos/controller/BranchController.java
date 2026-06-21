@@ -4,10 +4,13 @@ import com.pos.dto.request.BranchRequest;
 import com.pos.dto.response.BranchResponse;
 import com.pos.service.BranchService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -21,8 +24,9 @@ public class BranchController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BranchResponse>> getAll() {
-        return ResponseEntity.ok(branchService.getAllBranches());
+    public ResponseEntity<Page<BranchResponse>> getAll(
+            @PageableDefault(size = 50, sort = "name", direction = Sort.Direction.ASC) Pageable pageable) {
+        return ResponseEntity.ok(branchService.getAllBranches(pageable));
     }
 
     @GetMapping("/{id}")

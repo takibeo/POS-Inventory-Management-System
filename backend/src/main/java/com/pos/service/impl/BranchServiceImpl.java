@@ -9,12 +9,12 @@ import com.pos.exception.ResourceNotFoundException;
 import com.pos.mapper.BranchMapper;
 import com.pos.repository.BranchRepository;
 import com.pos.service.BranchService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -27,11 +27,9 @@ public class BranchServiceImpl implements BranchService {
     }
 
     @Override
-    public List<BranchResponse> getAllBranches() {
-        log.info("BranchService.getAllBranches called");
-        return branchRepository.findAll().stream()
-                .map(BranchMapper::toResponse)
-                .collect(Collectors.toList());
+    public Page<BranchResponse> getAllBranches(Pageable pageable) {
+        log.info("BranchService.getAllBranches called pageable={}", pageable);
+        return branchRepository.findAll(pageable).map(BranchMapper::toResponse);
     }
 
     @Override

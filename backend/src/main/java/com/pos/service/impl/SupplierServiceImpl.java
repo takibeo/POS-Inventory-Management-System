@@ -9,12 +9,12 @@ import com.pos.exception.ResourceNotFoundException;
 import com.pos.mapper.SupplierMapper;
 import com.pos.repository.SupplierRepository;
 import com.pos.service.SupplierService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -27,11 +27,9 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
-    public List<SupplierResponse> getAllSuppliers() {
-        log.info("SupplierService.getAllSuppliers called");
-        return supplierRepository.findAll().stream()
-                .map(SupplierMapper::toResponse)
-                .collect(Collectors.toList());
+    public Page<SupplierResponse> getAllSuppliers(Pageable pageable) {
+        log.info("SupplierService.getAllSuppliers called pageable={}", pageable);
+        return supplierRepository.findAll(pageable).map(SupplierMapper::toResponse);
     }
 
     @Override
