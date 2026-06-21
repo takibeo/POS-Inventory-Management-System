@@ -50,6 +50,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public Page<ProductResponse> searchProducts(String q, Pageable pageable) {
+        log.info("ProductService.searchProducts q={} pageable={}", q, pageable);
+        String qparam = (q == null || q.isBlank()) ? null : q.trim();
+        return productRepository.searchByNameOrSku(qparam, pageable)
+                .map(ProductMapper::toResponse);
+    }
+
+    @Override
     public ProductResponse getProductById(UUID id) {
         log.info("ProductService.getProductById id={}", id);
         Product product = productRepository.findByIdWithRelations(id)

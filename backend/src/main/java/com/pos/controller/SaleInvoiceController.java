@@ -28,8 +28,10 @@ public class SaleInvoiceController {
     @GetMapping
     @Operation(summary = "Lấy danh sách hoá đơn bán hàng")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CASHIER', 'WAREHOUSE')")
-    public ResponseEntity<List<SaleInvoiceResponse>> getAll() {
-        return ResponseEntity.ok(saleInvoiceService.getAllSales());
+    public ResponseEntity<List<SaleInvoiceResponse>> getAll(
+            @RequestParam(required = false) java.util.UUID branchId,
+            @RequestParam(required = false) String status) {
+        return ResponseEntity.ok(saleInvoiceService.getAllSales(branchId, status));
     }
 
     @GetMapping("/{id}")
