@@ -5,5 +5,7 @@ const getInventories = () => axiosInstance.get<Inventory[]>('/inventories').then
 const getInventory = (id: string) => axiosInstance.get<Inventory>(`/inventories/${id}`).then(res => res.data);
 const adjustInventory = (inventoryId: string, quantity: number, remark?: string) =>
   axiosInstance.post<unknown>(`/inventories/adjust?inventoryId=${inventoryId}&quantity=${quantity}${remark ? `&remark=${encodeURIComponent(remark)}` : ''}`);
+const getTransactionsByBranch = (branchId: string) =>
+  axiosInstance.get(`/inventories/${branchId}/transactions`).then(res => res.data);
 
-export default { getInventories, getInventory, adjustInventory };
+export default { getInventories, getInventory, adjustInventory, getTransactionsByBranch };
