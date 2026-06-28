@@ -36,7 +36,7 @@ class SaleInvoiceControllerIT {
     void getAll_sales_returnsOk() throws Exception {
         SaleInvoiceResponse r = new SaleInvoiceResponse();
         r.setId(UUID.randomUUID()); r.setInvoiceNumber("INV-1");
-        when(saleInvoiceService.getAllSales()).thenReturn(List.of(r));
+        when(saleInvoiceService.getAllSales(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(List.of(r));
 
         mockMvc.perform(get("/api/sales").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

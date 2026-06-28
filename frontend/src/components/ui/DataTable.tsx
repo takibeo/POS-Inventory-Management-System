@@ -18,7 +18,7 @@ type PaginationProps = {
 type DataTableProps<T> = {
   columns: DataTableColumn<T>[];
   data: T[];
-  rowKey: (row: T) => string;
+  rowKey: (row: T, index: number) => string;
   isLoading?: boolean;
   error?: string | null;
   emptyTitle?: string;
@@ -81,8 +81,8 @@ export default function DataTable<T>({
             </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
-            {data.map((row) => (
-                <tr key={rowKey(row)} className="hover:bg-slate-50/80 transition-colors">
+            {data.map((row, index) => (
+                <tr key={rowKey(row, index)} className="hover:bg-slate-50/80 transition-colors">
                   {columns.map((col) => (
                       <td key={col.key}
                           className={`px-4 py-3 text-slate-800 ${col.className ?? ''}`}>
