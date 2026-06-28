@@ -33,3 +33,19 @@ export interface LowStockItem {
   quantity: number;
   reorderLevel: number;
 }
+
+//chart theo ngày
+export interface RevenueTrend {
+  date: string;
+  revenue: number;
+}
+
+export interface ProfitTrend {
+  date: string;
+  profit: number;
+}
+
+export interface CategoryBreakdown {
+  categoryName: string;
+  productCount: number;
+}
