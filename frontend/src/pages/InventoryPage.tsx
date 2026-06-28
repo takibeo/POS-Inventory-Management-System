@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { DataTable, type DataTableColumn, PageHeader } from '../components/ui';
+import { Button, DataTable, EmptyState, LoadingSpinner, type DataTableColumn, PageHeader } from '../components/ui';
 import inventoryService from '../services/inventoryService';
 import type { Inventory } from '../types/inventory';
 
@@ -11,7 +11,7 @@ function formatNumber(value: number) {
 export default function InventoryPage() {
   const [selectedBranchId, setSelectedBranchId] = useState('');
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['inventories'],
     queryFn: inventoryService.getInventories,
     retry: false,
@@ -55,32 +55,51 @@ export default function InventoryPage() {
             <h3 className="text-lg font-semibold">Bộ lọc</h3>
             <p className="text-sm text-slate-500">Chọn chi nhánh để lọc danh sách tồn kho.</p>
           </div>
-          <div className="w-full md:w-72">
-            <label className="ui-label">Chi nhánh</label>
-            <select
-              className="ui-input"
-              value={selectedBranchId}
-              onChange={(e) => setSelectedBranchId(e.target.value)}
-            >
-              <option value="">Tất cả chi nhánh</option>
-              {branchOptions.map((branchId) => (
-                <option key={branchId} value={branchId}>
-                  {branchId}
-                </option>
-              ))}
-            </select>
+          <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row">
+            <div className="w-full md:w-72">
+              <label className="ui-label">Chi nhánh</label>
+              <select
+                className="ui-input"
+                value={selectedBranchId}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+              >
+                <option value="">Tất cả chi nhánh</option>
+                {branchOptions.map((branchId) => (
+                  <option key={branchId} value={branchId}>
+                    {branchId}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:self-end">
+              <Button type="button" variant="secondary" onClick={() => refetch()} disabled={isLoading}>
+                Làm mới
+              </Button>
+            </div>
           </div>
         </div>
 
-        <DataTable
-          columns={columns}
-          data={filtered}
-          rowKey={(row) => row.id}
-          isLoading={isLoading}
-          error={isError ? 'Không thể tải danh sách tồn kho.' : null}
-          emptyTitle="Chưa có dữ liệu tồn kho"
-          emptyDescription="Backend chưa trả dữ liệu hoặc chưa có inventory record."
-        />
+        {isError ? (
+          <EmptyState
+            variant="error"
+            title="Không thể tải tồn kho"
+            description="Vui lòng kiểm tra API inventories rồi thử lại."
+            action={
+              <Button type="button" variant="secondary" onClick={() => refetch()}>
+                Thử lại
+              </Button>
+            }
+          />
+        ) : (
+          <DataTable
+            columns={columns}
+            data={filtered}
+            rowKey={(row) => row.id}
+            isLoading={isLoading}
+            emptyTitle="Chưa có dữ liệu tồn kho"
+            emptyDescription="Backend chưa trả dữ liệu hoặc chưa có inventory record."
+          />
+        )}
 
         <p className="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-800">
           Chức năng điều chỉnh tồn kho sẽ được bật khi backend `inventories/adjust` được nối vào UI chi tiết.

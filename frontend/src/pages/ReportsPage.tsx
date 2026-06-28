@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { DataTable, type DataTableColumn, PageHeader } from '../components/ui';
+import { Button, DataTable, LoadingSpinner, type DataTableColumn, PageHeader } from '../components/ui';
 import reportService from '../services/reportService';
 import type { BestSeller, LowStockItem } from '../types/report';
 
-const formatCurrency = (v: number) => v.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+const formatCurrency = (v: number) =>
+  v.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 
 type ReportTab = 'revenue' | 'profit' | 'best-sellers' | 'low-stock';
 
@@ -31,12 +32,12 @@ export default function ReportsPage() {
   const bestSellersQuery = useQuery({ queryKey: ['reports', 'best-sellers'], queryFn: reportService.getBestSellers, retry: false });
   const lowStockQuery = useQuery({ queryKey: ['reports', 'low-stock'], queryFn: reportService.getLowStock, retry: false });
 
-  const bestSellerColumns: DataTableColumn<BestSeller>[] = [
+  const bestSellerColumns: DataTableColumn<BestSeller>[] = useMemo(() => [
     { key: 'productName', header: 'Tên sản phẩm' },
     { key: 'quantitySold', header: 'Số lượng đã bán', render: (r) => <span className="font-semibold text-slate-900">{r.quantitySold.toLocaleString()}</span> },
-  ];
+  ], []);
 
-  const lowStockColumns: DataTableColumn<LowStockItem>[] = [
+  const lowStockColumns: DataTableColumn<LowStockItem>[] = useMemo(() => [
     { key: 'productName', header: 'Tên sản phẩm' },
     {
       key: 'quantity',
@@ -53,13 +54,19 @@ export default function ReportsPage() {
         </span>
       ),
     },
-  ];
+  ], []);
+
+  const activeTabLoading =
+    (activeTab === 'revenue' && revenueQuery.isLoading) ||
+    (activeTab === 'profit' && profitQuery.isLoading) ||
+    (activeTab === 'best-sellers' && bestSellersQuery.isLoading) ||
+    (activeTab === 'low-stock' && lowStockQuery.isLoading);
 
   return (
     <div className="space-y-6">
       <PageHeader title="Báo cáo" description="Doanh thu, lợi nhuận, sản phẩm bán chạy và tồn kho thấp." />
 
-      <div className="flex w-fit gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1">
+      <div className="flex w-full flex-wrap gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1 sm:w-fit">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -72,12 +79,12 @@ export default function ReportsPage() {
         ))}
       </div>
 
-      {activeTab === 'revenue' && (
+      {activeTabLoading && <LoadingSpinner label="Đang tải báo cáo..." />}
+
+      {activeTab === 'revenue' && !revenueQuery.isLoading && (
         <div className="ui-card space-y-4">
           <h3 className="text-lg font-semibold">Tổng quan doanh thu</h3>
-          {revenueQuery.isLoading ? (
-            <p className="text-sm text-slate-500">Đang tải...</p>
-          ) : revenueQuery.isError ? (
+          {revenueQuery.isError ? (
             <ApiUnavailable endpoint="GET /api/reports/revenue" />
           ) : (
             <div className="grid gap-4 sm:grid-cols-3">
@@ -98,12 +105,10 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {activeTab === 'profit' && (
+      {activeTab === 'profit' && !profitQuery.isLoading && (
         <div className="ui-card space-y-4">
           <h3 className="text-lg font-semibold">Tổng quan lợi nhuận</h3>
-          {profitQuery.isLoading ? (
-            <p className="text-sm text-slate-500">Đang tải...</p>
-          ) : profitQuery.isError ? (
+          {profitQuery.isError ? (
             <ApiUnavailable endpoint="GET /api/reports/profit" />
           ) : (
             <div className="grid gap-4 sm:grid-cols-3">
@@ -124,29 +129,30 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {activeTab === 'best-sellers' && (
+      {activeTab === 'best-sellers' && !bestSellersQuery.isLoading && (
         <div className="ui-card">
           <h3 className="mb-4 text-lg font-semibold">Sản phẩm bán chạy</h3>
           <DataTable
             columns={bestSellerColumns}
             data={bestSellersQuery.data ?? []}
             rowKey={(r) => r.productName}
-            isLoading={bestSellersQuery.isLoading}
+            isLoading={false}
             error={bestSellersQuery.isError ? 'API chưa sẵn sàng: GET /api/reports/best-sellers' : null}
             emptyTitle="Chưa có dữ liệu"
             emptyDescription="Chưa có hóa đơn nào được tạo."
+            emptyAction={bestSellersQuery.isError ? <Button type="button" variant="secondary" onClick={() => bestSellersQuery.refetch()}>Thử lại</Button> : undefined}
           />
         </div>
       )}
 
-      {activeTab === 'low-stock' && (
+      {activeTab === 'low-stock' && !lowStockQuery.isLoading && (
         <div className="ui-card">
           <h3 className="mb-4 text-lg font-semibold">Tồn kho thấp</h3>
           <DataTable
             columns={lowStockColumns}
             data={lowStockQuery.data ?? []}
             rowKey={(r) => r.productName}
-            isLoading={lowStockQuery.isLoading}
+            isLoading={false}
             error={lowStockQuery.isError ? 'API chưa sẵn sàng: GET /api/reports/low-stock' : null}
             emptyTitle="Không có cảnh báo"
             emptyDescription="Tất cả sản phẩm đều trên mức đặt lại."

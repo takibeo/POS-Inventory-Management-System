@@ -7,6 +7,8 @@ import {
   Button,
   ConfirmModal,
   DataTable,
+  EmptyState,
+  LoadingSpinner,
   type DataTableColumn,
   PageHeader,
   TableRowActions,
@@ -51,19 +53,22 @@ export default function ProductsPage() {
   const [search, setSearch] = useState('');
   const [detailTarget, setDetailTarget] = useState<Product | null>(null);
 
-  const { data: products, isLoading, error } = useQuery<Product[], Error>({
+  const { data: products, isLoading, error, refetch } = useQuery<Product[], Error>({
     queryKey: ['products'],
     queryFn: productService.getProducts,
+    retry: false,
   });
 
-  const { data: categories } = useQuery({
+  const { data: categories, isLoading: categoriesLoading, isError: categoriesError } = useQuery({
     queryKey: ['categories'],
     queryFn: categoryService.getCategories,
+    retry: false,
   });
 
-  const { data: suppliers } = useQuery({
+  const { data: suppliers, isLoading: suppliersLoading, isError: suppliersError } = useQuery({
     queryKey: ['suppliers'],
     queryFn: supplierService.getSuppliers,
+    retry: false,
   });
 
   const createMutation = useMutation({
@@ -148,13 +153,15 @@ export default function ProductsPage() {
     setValue('isActive', product.isActive ?? true);
   };
 
+  const escapeCsvValue = (value: unknown) => `"${String(value).split('"').join('""')}"`;
+
   const exportCsv = () => {
     const header = ['SKU', 'Name', 'Price', 'Cost', 'Unit', 'Status'];
     const csv = [
       header.join(','),
       ...(filteredProducts ?? []).map((row) =>
         [row.sku, row.name, row.price, row.cost, row.unit ?? '', row.isActive ? 'Active' : 'Inactive']
-          .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+          .map(escapeCsvValue)
           .join(',')
       ),
     ].join('\n');
@@ -223,12 +230,12 @@ export default function ProductsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="ui-label">Giá bán</label>
-                <input type="number" step="1000" {...register('price')} className="ui-input" />
+                <input type="number" min="0" step="1000" inputMode="decimal" {...register('price')} className="ui-input" />
                 {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>}
               </div>
               <div>
                 <label className="ui-label">Giá vốn</label>
-                <input type="number" step="1000" {...register('cost')} className="ui-input" />
+                <input type="number" min="0" step="1000" inputMode="decimal" {...register('cost')} className="ui-input" />
                 {errors.cost && <p className="mt-1 text-sm text-red-600">{errors.cost.message}</p>}
               </div>
             </div>
@@ -239,12 +246,13 @@ export default function ProductsPage() {
               </div>
               <div>
                 <label className="ui-label">Mức đặt lại</label>
-                <input type="number" {...register('reorderLevel')} className="ui-input" />
+                <input type="number" min="0" inputMode="numeric" {...register('reorderLevel')} className="ui-input" />
+                {errors.reorderLevel && <p className="mt-1 text-sm text-red-600">{errors.reorderLevel.message}</p>}
               </div>
             </div>
             <div>
               <label className="ui-label">Danh mục</label>
-              <select {...register('categoryId')} className="ui-input">
+              <select {...register('categoryId')} className="ui-input" disabled={categoriesLoading || categoriesError}>
                 <option value="">— Không chọn —</option>
                 {categories?.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -255,7 +263,7 @@ export default function ProductsPage() {
             </div>
             <div>
               <label className="ui-label">Nhà cung cấp</label>
-              <select {...register('supplierId')} className="ui-input">
+              <select {...register('supplierId')} className="ui-input" disabled={suppliersLoading || suppliersError}>
                 <option value="">— Không chọn —</option>
                 {suppliers?.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -282,25 +290,47 @@ export default function ProductsPage() {
         </div>
 
         <div className="ui-card">
-          <h3 className="mb-4 text-lg font-semibold">Danh sách sản phẩm</h3>
-          <DataTable
-            columns={columns}
-            data={filteredProducts}
-            rowKey={(row) => row.id}
-            isLoading={isLoading}
-            error={error ? 'Không thể tải danh sách sản phẩm.' : null}
-            emptyTitle="Chưa có sản phẩm"
-            emptyDescription="Thêm sản phẩm mới bằng form bên trái."
-            renderActions={(product) => (
-              <TableRowActions
-                onEdit={() => handleEdit(product)}
-                onDelete={() => setDeleteTarget(product)}
-                extraActions={[
-                  { label: 'Xem', onClick: () => setDetailTarget(product), variant: 'ghost' },
-                ]}
-              />
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="text-lg font-semibold">Danh sách sản phẩm</h3>
+            {!isLoading && (
+              <Button type="button" variant="ghost" onClick={() => refetch()}>
+                Làm mới
+              </Button>
             )}
-          />
+          </div>
+          {isLoading ? (
+            <LoadingSpinner />
+          ) : error ? (
+            <EmptyState
+              variant="error"
+              title="Không thể tải danh sách sản phẩm"
+              description="Kiểm tra kết nối API hoặc thử tải lại danh sách."
+              action={
+                <Button type="button" variant="secondary" onClick={() => refetch()}>
+                  Thử lại
+                </Button>
+              }
+            />
+          ) : (
+            <DataTable
+              columns={columns}
+              data={filteredProducts}
+              rowKey={(row) => row.id}
+              isLoading={false}
+              error={null}
+              emptyTitle="Chưa có sản phẩm"
+              emptyDescription="Thêm sản phẩm mới bằng form bên trái."
+              renderActions={(product) => (
+                <TableRowActions
+                  onEdit={() => handleEdit(product)}
+                  onDelete={() => setDeleteTarget(product)}
+                  extraActions={[
+                    { label: 'Xem', onClick: () => setDetailTarget(product), variant: 'ghost' },
+                  ]}
+                />
+              )}
+            />
+          )}
         </div>
       </div>
 
