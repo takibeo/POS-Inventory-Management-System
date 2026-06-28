@@ -5,6 +5,13 @@ const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080/api'
 const ACCESS_TOKEN_KEY = 'pos_access_token';
 const REFRESH_TOKEN_KEY = 'pos_refresh_token';
 
+function unwrapApiResponse<T>(payload: unknown): T {
+  if (payload && typeof payload === 'object' && 'data' in payload && 'success' in payload) {
+    return (payload as { data: T }).data;
+  }
+  return payload as T;
+}
+
 const axiosInstance = axios.create({
   baseURL,
   headers: {
@@ -21,10 +28,17 @@ axiosInstance.interceptors.request.use((config) => {
 });
 
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    response.data = unwrapApiResponse(response.data);
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     const responseStatus = error.response?.status;
+
+    if (error.response?.data) {
+      error.response.data = unwrapApiResponse(error.response.data);
+    }
 
     if (responseStatus === 401 && originalRequest && !originalRequest._retry) {
       const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);

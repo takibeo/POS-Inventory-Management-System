@@ -11,5 +11,6 @@ export interface PurchaseOrder {
   branchId: string;
   status: string;
   totalAmount: number;
+  notes?: string;
   items: PurchaseOrderItem[];
 }

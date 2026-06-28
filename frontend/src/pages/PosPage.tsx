@@ -155,20 +155,23 @@ export default function PosPage() {
     }
 
     createSaleMutation.mutate({
+      id: '',
+      invoiceNumber: '',
       branchId: values.branchId,
       cashierId: currentUser.id,
-      paymentMethod: values.paymentMethod,
       customerName: values.customerName || undefined,
-      tax: values.tax,
-      discount: values.discount,
+      totalAmount: totalAmount,
+      paymentMethod: values.paymentMethod,
       amountPaid: values.amountPaid,
+      changeAmount: changeAmount,
       items: cart.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         discount: item.discount ?? 0,
       })),
-    });
+      status: 'PAID',
+    } as SaleInvoice);
   };
 
   const branchLabel = branches.find((b) => b.id === selectedBranchId)?.name ?? '—';

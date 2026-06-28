@@ -190,7 +190,9 @@ export default function PurchaseOrdersPage() {
             <div className="space-y-3 rounded-lg border border-slate-200 p-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold">Danh sách sản phẩm</h4>
-                <Button type="button" size="sm" onClick={addItemToForm} disabled={createMutation.isPending}>+ Thêm</Button>
+                <Button type="button" onClick={addItemToForm} disabled={createMutation.isPending}>
+                  + Thêm
+                </Button>
               </div>
 
               {form.items.length > 0 ? (
@@ -214,7 +216,12 @@ export default function PurchaseOrdersPage() {
                           <input type="number" min="0" step="0.01" className="ui-input text-sm" value={item.cost} onChange={(e) => updateFormItem(index, 'cost', parseFloat(e.target.value) || 0)} />
                         </div>
                       </div>
-                      <Button type="button" variant="secondary" size="sm" onClick={() => removeItemFromForm(index)} disabled={createMutation.isPending}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => removeItemFromForm(index)}
+                        disabled={createMutation.isPending}
+                      >
                         Xoá
                       </Button>
                     </div>
@@ -247,7 +254,11 @@ export default function PurchaseOrdersPage() {
             emptyTitle="Chưa có đơn nhập kho"
             emptyDescription="Tạo đơn mới bằng form bên trái."
             renderActions={(row) => (
-              <Button type="button" variant="secondary" size="sm" onClick={() => setActiveOrder(row)}>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setActiveOrder(row)}
+              >
                 Chi tiết
               </Button>
             )}

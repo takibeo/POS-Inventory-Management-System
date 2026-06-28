@@ -45,7 +45,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BadCredentialsException("Invalid username or password");
         }
 
-        var roles = user.getRoles().stream().map(r -> "ROLE_" + r.getName()).toList();
+        var roles = user.getRoles().stream()
+                .map(Role -> Role.getName())
+                .map(name -> name.startsWith("ROLE_") ? name : "ROLE_" + name)
+                .toList();
         String token = jwtUtil.generateToken(user.getUsername(), roles);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
 
@@ -56,7 +59,10 @@ public class AuthServiceImpl implements AuthService {
     public TokenResponse refreshToken(RefreshTokenRequest request) {
         log.info("AuthService.refreshToken called");
         RefreshToken validRefreshToken = refreshTokenService.verifyRefreshToken(request.refreshToken());
-        var roles = validRefreshToken.getUser().getRoles().stream().map(r -> "ROLE_" + r.getName()).toList();
+        var roles = validRefreshToken.getUser().getRoles().stream()
+                .map(r -> r.getName())
+                .map(name -> name.startsWith("ROLE_") ? name : "ROLE_" + name)
+                .toList();
         String token = jwtUtil.generateToken(validRefreshToken.getUser().getUsername(), roles);
         refreshTokenService.revokeRefreshToken(request.refreshToken());
         RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(validRefreshToken.getUser());
