@@ -235,7 +235,7 @@ export default function PurchaseOrdersPage() {
             <div className="space-y-3 rounded-lg border border-slate-200 p-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold">Danh sách sản phẩm</h4>
-                <Button type="button" size="sm" onClick={addItemToForm} disabled={createMutation.isPending}>
+                <Button type="button" onClick={addItemToForm} disabled={createMutation.isPending}>
                   + Thêm
                 </Button>
               </div>
@@ -285,7 +285,6 @@ export default function PurchaseOrdersPage() {
                       <Button
                         type="button"
                         variant="secondary"
-                        size="sm"
                         onClick={() => removeItemFromForm(index)}
                         disabled={createMutation.isPending}
                       >
@@ -334,7 +333,6 @@ export default function PurchaseOrdersPage() {
               <Button
                 type="button"
                 variant="secondary"
-                size="sm"
                 onClick={() => setActiveOrder(row)}
               >
                 Chi tiết
