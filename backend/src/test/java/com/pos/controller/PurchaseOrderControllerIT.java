@@ -35,7 +35,7 @@ class PurchaseOrderControllerIT {
     @org.junit.jupiter.api.Test
     void getAll_purchaseOrders_returnsOk() throws Exception {
         PurchaseOrderResponse r = new PurchaseOrderResponse(); r.setId(UUID.randomUUID()); r.setOrderNumber("PO-1");
-        when(purchaseOrderService.getAllPurchaseOrders()).thenReturn(List.of(r));
+        when(purchaseOrderService.getAllPurchaseOrders(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn(List.of(r));
 
         mockMvc.perform(get("/api/purchase-orders").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

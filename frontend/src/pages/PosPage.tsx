@@ -154,38 +154,22 @@ export default function PosPage() {
     }
 
     createSaleMutation.mutate({
-      branchId: values.branchId,
-      cashierId: currentUser.id,
-      paymentMethod: values.paymentMethod,
-      customerName: values.customerName || undefined,
-      tax: values.tax,
-      discount: values.discount,
-      amountPaid: values.amountPaid,
-      items: cart.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discount: item.discount ?? 0,
-      })),
       id: '',
       invoiceNumber: '',
-      totalAmount: 0,
-      changeAmount: 0,
-      createdAt: '',
-      status: '',
       branchId: values.branchId,
       cashierId: currentUser.id,
       customerName: values.customerName || undefined,
+      totalAmount: totalAmount,
       paymentMethod: values.paymentMethod,
       amountPaid: values.amountPaid,
       changeAmount: changeAmount,
-      totalAmount: totalAmount,
       items: cart.map((item) => ({
         productId: item.productId,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         discount: item.discount ?? 0,
       })),
+      status: 'PAID',
     } as SaleInvoice);
   };
 
