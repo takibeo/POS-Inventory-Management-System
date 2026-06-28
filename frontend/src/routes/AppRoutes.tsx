@@ -13,6 +13,7 @@ import ReportsPage from '../pages/ReportsPage';
 import PosPage from '../pages/PosPage';
 import StockMovementLog from '../pages/StockMovementLog';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { BranchProvider } from '../contexts/BranchContext';
 
 export default function AppRoutes() {
   return (
@@ -23,7 +24,13 @@ export default function AppRoutes() {
         </Route>
 
         <Route element={<ProtectedRoute />}>
-          <Route element={<AdminLayout />}>
+          <Route
+            element={
+              <BranchProvider>
+                <AdminLayout />
+              </BranchProvider>
+            }
+          >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/pos" element={<PosPage />} />
             <Route path="/products" element={<ProductsPage />} />
