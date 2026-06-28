@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -42,13 +42,14 @@ const defaultValues: ProductFormValues = {
   isActive: true,
 };
 
-const formatCurrency = (value: number) =>
-  value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
+const formatCurrency = (value: number) => value.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [search, setSearch] = useState('');
+  const [detailTarget, setDetailTarget] = useState<Product | null>(null);
 
   const { data: products, isLoading, error } = useQuery<Product[], Error>({
     queryKey: ['products'],
@@ -147,29 +148,45 @@ export default function ProductsPage() {
     setValue('isActive', product.isActive ?? true);
   };
 
+  const exportCsv = () => {
+    const header = ['SKU', 'Name', 'Price', 'Cost', 'Unit', 'Status'];
+    const csv = [
+      header.join(','),
+      ...(filteredProducts ?? []).map((row) =>
+        [row.sku, row.name, row.price, row.cost, row.unit ?? '', row.isActive ? 'Active' : 'Inactive']
+          .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+          .join(',')
+      ),
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'products.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const filteredProducts = useMemo(() => {
+    const keyword = search.trim().toLowerCase();
+    if (!keyword) return products ?? [];
+    return (products ?? []).filter((row) =>
+      row.sku.toLowerCase().includes(keyword) || row.name.toLowerCase().includes(keyword) || (row.unit ?? '').toLowerCase().includes(keyword)
+    );
+  }, [products, search]);
+
   const columns: DataTableColumn<Product>[] = [
     { key: 'sku', header: 'SKU' },
     { key: 'name', header: 'Tên' },
-    {
-      key: 'price',
-      header: 'Giá bán',
-      render: (row) => formatCurrency(row.price),
-    },
-    {
-      key: 'cost',
-      header: 'Giá vốn',
-      render: (row) => formatCurrency(row.cost),
-    },
+    { key: 'price', header: 'Giá bán', render: (row) => formatCurrency(row.price) },
+    { key: 'cost', header: 'Giá vốn', render: (row) => formatCurrency(row.cost) },
     { key: 'unit', header: 'Đơn vị', render: (row) => row.unit ?? '—' },
     {
       key: 'isActive',
       header: 'Trạng thái',
       render: (row) => (
-        <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-            row.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-          }`}
-        >
+        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${row.isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
           {row.isActive ? 'Hoạt động' : 'Ngừng'}
         </span>
       ),
@@ -178,35 +195,31 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Quản lý sản phẩm"
-        description="Tạo, sửa và xóa sản phẩm trong hệ thống."
-      />
+      <PageHeader title="Quản lý sản phẩm" description="Tạo, sửa và xóa sản phẩm trong hệ thống." />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} className="ui-input sm:max-w-sm" placeholder="Tìm theo SKU, tên hoặc đơn vị" />
+        <Button type="button" variant="secondary" onClick={exportCsv} disabled={filteredProducts.length === 0}>Export CSV</Button>
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
         <div className="ui-card">
-          <h3 className="mb-4 text-lg font-semibold">
-            {editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}
-          </h3>
-
+          <h3 className="mb-4 text-lg font-semibold">{editingProduct ? 'Sửa sản phẩm' : 'Thêm sản phẩm mới'}</h3>
           <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div>
               <label className="ui-label">SKU</label>
               <input type="text" {...register('sku')} className="ui-input" />
               {errors.sku && <p className="mt-1 text-sm text-red-600">{errors.sku.message}</p>}
             </div>
-
             <div>
               <label className="ui-label">Tên sản phẩm</label>
               <input type="text" {...register('name')} className="ui-input" />
               {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
             </div>
-
             <div>
               <label className="ui-label">Mô tả</label>
               <textarea rows={3} {...register('description')} className="ui-input" />
             </div>
-
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="ui-label">Giá bán</label>
@@ -219,7 +232,6 @@ export default function ProductsPage() {
                 {errors.cost && <p className="mt-1 text-sm text-red-600">{errors.cost.message}</p>}
               </div>
             </div>
-
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="ui-label">Đơn vị</label>
@@ -230,7 +242,6 @@ export default function ProductsPage() {
                 <input type="number" {...register('reorderLevel')} className="ui-input" />
               </div>
             </div>
-
             <div>
               <label className="ui-label">Danh mục</label>
               <select {...register('categoryId')} className="ui-input">
@@ -242,7 +253,6 @@ export default function ProductsPage() {
                 ))}
               </select>
             </div>
-
             <div>
               <label className="ui-label">Nhà cung cấp</label>
               <select {...register('supplierId')} className="ui-input">
@@ -254,17 +264,12 @@ export default function ProductsPage() {
                 ))}
               </select>
             </div>
-
             <label className="flex items-center gap-2 text-sm text-slate-700">
               <input type="checkbox" {...register('isActive')} className="rounded border-slate-300" />
               Đang hoạt động
             </label>
-
             <div className="flex flex-wrap gap-3 pt-2">
-              <Button
-                type="submit"
-                disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-              >
+              <Button type="submit" disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}>
                 {editingProduct ? 'Cập nhật' : 'Tạo sản phẩm'}
               </Button>
               {editingProduct && (
@@ -280,7 +285,7 @@ export default function ProductsPage() {
           <h3 className="mb-4 text-lg font-semibold">Danh sách sản phẩm</h3>
           <DataTable
             columns={columns}
-            data={products ?? []}
+            data={filteredProducts}
             rowKey={(row) => row.id}
             isLoading={isLoading}
             error={error ? 'Không thể tải danh sách sản phẩm.' : null}
@@ -290,6 +295,9 @@ export default function ProductsPage() {
               <TableRowActions
                 onEdit={() => handleEdit(product)}
                 onDelete={() => setDeleteTarget(product)}
+                extraActions={[
+                  { label: 'Xem', onClick: () => setDetailTarget(product), variant: 'ghost' },
+                ]}
               />
             )}
           />
@@ -304,6 +312,16 @@ export default function ProductsPage() {
         isLoading={deleteMutation.isPending}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+      />
+
+      <ConfirmModal
+        isOpen={!!detailTarget}
+        title="Chi tiết sản phẩm"
+        message={detailTarget ? `SKU: ${detailTarget.sku}\nTên: ${detailTarget.name}\nGiá bán: ${formatCurrency(detailTarget.price)}\nGiá vốn: ${formatCurrency(detailTarget.cost)}\nĐơn vị: ${detailTarget.unit ?? '—'}\nTrạng thái: ${detailTarget.isActive ? 'Hoạt động' : 'Ngừng'}` : ''}
+        confirmLabel="Đóng"
+        variant="primary"
+        onConfirm={() => setDetailTarget(null)}
+        onCancel={() => setDetailTarget(null)}
       />
     </div>
   );

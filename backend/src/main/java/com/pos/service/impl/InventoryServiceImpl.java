@@ -60,6 +60,6 @@ public class InventoryServiceImpl implements InventoryService {
     @Override
     public List<InventoryTransaction> getTransactionsByBranch(UUID branchId) {
         log.info("InventoryService.getTransactionsByBranch branchId={}", branchId);
-        return transactionRepository.findAll();
+        return transactionRepository.findByInventoryBranchIdOrderByCreatedAtDesc(branchId);
     }
 }
