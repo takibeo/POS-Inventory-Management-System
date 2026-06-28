@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 
 type SidebarProps = {
@@ -17,7 +18,25 @@ const links = [
   { path: '/stock-movement', label: 'Lịch sử tồn kho' },
 ];
 
+const STORAGE_KEY = 'sidebar-collapsed';
+
 export default function Sidebar({ onNavigate }: SidebarProps) {
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, String(collapsed));
+    } catch {
+      // ignore
+    }
+  }, [collapsed]);
+
   return (
     <nav className="h-full overflow-y-auto space-y-1 p-4">
       {links.map((link) => (
