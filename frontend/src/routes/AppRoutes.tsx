@@ -11,6 +11,7 @@ import PurchaseOrdersPage from '../pages/PurchaseOrdersPage';
 import BranchesPage from '../pages/BranchesPage';
 import ReportsPage from '../pages/ReportsPage';
 import PosPage from '../pages/PosPage';
+import StockMovementLog from '../pages/StockMovementLog';
 import ProtectedRoute from '../components/ProtectedRoute';
 
 export default function AppRoutes() {
@@ -32,6 +33,7 @@ export default function AppRoutes() {
             <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
             <Route path="/branches" element={<BranchesPage />} />
             <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/stock-movement" element={<StockMovementLog />} />
           </Route>
         </Route>
 
