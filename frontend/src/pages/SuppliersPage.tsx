@@ -6,6 +6,7 @@ import {
   Button,
   ConfirmModal,
   DataTable,
+  EmptyState,
   type DataTableColumn,
   PageHeader,
   TableRowActions,
@@ -36,9 +37,10 @@ export default function SuppliersPage() {
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Supplier | null>(null);
 
-  const { data: suppliers, isLoading, isError } = useQuery<Supplier[], Error>({
+  const { data: suppliers, isLoading, isError, refetch } = useQuery<Supplier[], Error>({
     queryKey: ['suppliers'],
     queryFn: supplierService.getSuppliers,
+    retry: false,
   });
 
   const createMutation = useMutation({
@@ -178,22 +180,40 @@ export default function SuppliersPage() {
         </div>
 
         <div className="ui-card">
-          <h3 className="mb-4 text-lg font-semibold">Danh sách nhà cung cấp</h3>
-          <DataTable
-            columns={columns}
-            data={suppliers ?? []}
-            rowKey={(row) => row.id}
-            isLoading={isLoading}
-            error={isError ? 'Không thể tải danh sách nhà cung cấp.' : null}
-            emptyTitle="Chưa có nhà cung cấp"
-            emptyDescription="Thêm nhà cung cấp mới bằng form bên trái."
-            renderActions={(supplier) => (
-              <TableRowActions
-                onEdit={() => handleEdit(supplier)}
-                onDelete={() => setDeleteTarget(supplier)}
-              />
-            )}
-          />
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold">Danh sách nhà cung cấp</h3>
+            <Button type="button" variant="secondary" onClick={() => refetch()} disabled={isLoading}>
+              Làm mới
+            </Button>
+          </div>
+
+          {isError ? (
+            <EmptyState
+              variant="error"
+              title="Không thể tải danh sách nhà cung cấp"
+              description="Vui lòng kiểm tra API suppliers rồi thử lại."
+              action={
+                <Button type="button" variant="secondary" onClick={() => refetch()}>
+                  Thử lại
+                </Button>
+              }
+            />
+          ) : (
+            <DataTable
+              columns={columns}
+              data={suppliers ?? []}
+              rowKey={(row) => row.id}
+              isLoading={isLoading}
+              emptyTitle="Chưa có nhà cung cấp"
+              emptyDescription="Thêm nhà cung cấp mới bằng form bên trái."
+              renderActions={(supplier) => (
+                <TableRowActions
+                  onEdit={() => handleEdit(supplier)}
+                  onDelete={() => setDeleteTarget(supplier)}
+                />
+              )}
+            />
+          )}
         </div>
       </div>
 

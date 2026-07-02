@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Button, ConfirmModal, DataTable, type DataTableColumn, PageHeader } from '../components/ui';
+import { Button, ConfirmModal, DataTable, EmptyState, LoadingSpinner, type DataTableColumn, PageHeader } from '../components/ui';
 import purchaseOrderService from '../services/purchaseOrderService';
 import productService from '../services/productService';
 import supplierService from '../services/supplierService';
@@ -29,11 +29,18 @@ type FormItem = {
   cost: number;
 };
 
-const defaultForm = {
+type PurchaseOrderForm = {
+  supplierId: string;
+  branchId: string;
+  notes: string;
+  items: FormItem[];
+};
+
+const defaultForm: PurchaseOrderForm = {
   supplierId: '',
   branchId: '',
   notes: '',
-  items: [] as FormItem[],
+  items: [],
 };
 
 function formatCurrency(value: number) {
@@ -43,7 +50,7 @@ function formatCurrency(value: number) {
 export default function PurchaseOrdersPage() {
   const queryClient = useQueryClient();
   const [activeOrder, setActiveOrder] = useState<PurchaseOrder | null>(null);
-  const [form, setForm] = useState(defaultForm);
+  const [form, setForm] = useState<PurchaseOrderForm>(defaultForm);
   const [confirmReceive, setConfirmReceive] = useState<PurchaseOrder | null>(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -52,19 +59,22 @@ export default function PurchaseOrdersPage() {
     retry: false,
   });
 
-  const { data: products = [] } = useQuery<Product[], Error>({
+  const { data: products = [], isLoading: productsLoading } = useQuery<Product[], Error>({
     queryKey: ['products'],
     queryFn: productService.getProducts,
+    retry: false,
   });
 
-  const { data: suppliers = [] } = useQuery<Supplier[], Error>({
+  const { data: suppliers = [], isLoading: suppliersLoading } = useQuery<Supplier[], Error>({
     queryKey: ['suppliers'],
     queryFn: supplierService.getSuppliers,
+    retry: false,
   });
 
-  const { data: branches = [] } = useQuery<Branch[], Error>({
+  const { data: branches = [], isLoading: branchesLoading } = useQuery<Branch[], Error>({
     queryKey: ['branches'],
     queryFn: branchService.getBranches,
+    retry: false,
   });
 
   const createMutation = useMutation({
@@ -89,9 +99,12 @@ export default function PurchaseOrdersPage() {
     onError: () => toast.error('Không thể nhận hàng.'),
   });
 
-  const getProductName = (productId: string) => products.find((p) => p.id === productId)?.name ?? productId;
-  const getSupplierName = (supplierId: string) => suppliers.find((s) => s.id === supplierId)?.name ?? supplierId;
-  const getBranchName = (branchId: string) => branches.find((b) => b.id === branchId)?.name ?? branchId;
+  const getProductName = (productId: string) =>
+    products.find((p) => p.id === productId)?.name ?? productId;
+  const getSupplierName = (supplierId: string) =>
+    suppliers.find((s) => s.id === supplierId)?.name ?? supplierId;
+  const getBranchName = (branchId: string) =>
+    branches.find((b) => b.id === branchId)?.name ?? branchId;
 
   const columns: DataTableColumn<PurchaseOrder>[] = useMemo(
     () => [
@@ -101,9 +114,17 @@ export default function PurchaseOrdersPage() {
       {
         key: 'status',
         header: 'Trạng thái',
-        render: (row) => <span className={orderStatusClass[row.status] ?? 'ui-badge'}>{orderStatusLabels[row.status] ?? row.status}</span>,
+        render: (row) => (
+          <span className={orderStatusClass[row.status] ?? 'ui-badge'}>
+            {orderStatusLabels[row.status] ?? row.status}
+          </span>
+        ),
       },
-      { key: 'totalAmount', header: 'Tổng tiền', render: (row) => <span className="font-semibold">{formatCurrency(row.totalAmount)}</span> },
+      {
+        key: 'totalAmount',
+        header: 'Tổng tiền',
+        render: (row) => <span className="font-semibold">{formatCurrency(row.totalAmount)}</span>,
+      },
     ],
     [suppliers, branches]
   );
@@ -120,7 +141,7 @@ export default function PurchaseOrdersPage() {
       header.join(','),
       ...(data ?? []).map((row) =>
         [row.orderNumber, getSupplierName(row.supplierId), getBranchName(row.branchId), row.status, row.totalAmount]
-          .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+          .map((value) => `"${String(value).split('"').join('""')}"`)
           .join(',')
       ),
     ].join('\n');
@@ -138,15 +159,29 @@ export default function PurchaseOrdersPage() {
     window.print();
   };
 
-  const addItemToForm = () => setForm((prev) => ({ ...prev, items: [...prev.items, { productId: '', quantity: 1, cost: 0 }] }));
-  const removeItemFromForm = (index: number) => setForm((prev) => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
-  const updateFormItem = (index: number, key: keyof FormItem, value: any) => setForm((prev) => ({ ...prev, items: prev.items.map((item, i) => (i === index ? { ...item, [key]: value } : item)) }));
+  const addItemToForm = () =>
+    setForm((prev) => ({ ...prev, items: [...prev.items, { productId: '', quantity: 1, cost: 0 }] }));
+  const removeItemFromForm = (index: number) =>
+    setForm((prev) => ({ ...prev, items: prev.items.filter((_, i) => i !== index) }));
+  const updateFormItem = (index: number, key: keyof FormItem, value: string | number) =>
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) => (i === index ? { ...item, [key]: value } : item)),
+    }));
 
   const handleSubmitOrder = () => {
     if (!form.supplierId) return toast.error('Vui lòng chọn nhà cung cấp.');
     if (!form.branchId) return toast.error('Vui lòng chọn chi nhánh.');
     if (form.items.length === 0) return toast.error('Vui lòng thêm ít nhất một sản phẩm.');
-    createMutation.mutate({ supplierId: form.supplierId, branchId: form.branchId, notes: form.notes, items: form.items });
+    if (form.items.some((item) => !item.productId || item.quantity <= 0 || item.cost < 0)) {
+      return toast.error('Vui lòng kiểm tra lại số lượng và giá nhập.');
+    }
+    createMutation.mutate({
+      supplierId: form.supplierId,
+      branchId: form.branchId,
+      notes: form.notes,
+      items: form.items,
+    });
   };
 
   const handleReceive = () => {
@@ -154,9 +189,14 @@ export default function PurchaseOrdersPage() {
     receiveMutation.mutate(confirmReceive.id);
   };
 
+  const isLoadingMasterData = suppliersLoading || branchesLoading || productsLoading;
+
   return (
     <div className="space-y-6 print:bg-white print:text-black">
-      <PageHeader title="Đơn nhập kho" description="Theo dõi trạng thái đơn, tạo đơn mới và nhận hàng từ nhà cung cấp." />
+      <PageHeader
+        title="Đơn nhập kho"
+        description="Theo dõi trạng thái đơn, tạo đơn mới và nhận hàng từ nhà cung cấp."
+      />
 
       <div className="flex justify-end gap-2 print:hidden">
         <Button type="button" variant="secondary" onClick={exportCsv} disabled={(data ?? []).length === 0}>
@@ -171,76 +211,124 @@ export default function PurchaseOrdersPage() {
             <p className="text-sm text-slate-500">Điền thông tin và thêm sản phẩm vào danh sách.</p>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="ui-label">Nhà cung cấp *</label>
-              <select className="ui-input" value={form.supplierId} onChange={(e) => setForm((prev) => ({ ...prev, supplierId: e.target.value }))}>
-                <option value="">Chọn nhà cung cấp</option>
-                {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="ui-label">Chi nhánh *</label>
-              <select className="ui-input" value={form.branchId} onChange={(e) => setForm((prev) => ({ ...prev, branchId: e.target.value }))}>
-                <option value="">Chọn chi nhánh</option>
-                {branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
-              </select>
-            </div>
-
-            <div className="space-y-3 rounded-lg border border-slate-200 p-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold">Danh sách sản phẩm</h4>
-                <Button type="button" onClick={addItemToForm} disabled={createMutation.isPending}>
-                  + Thêm
-                </Button>
+          {isLoadingMasterData ? (
+            <LoadingSpinner label="Đang tải dữ liệu danh mục..." />
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <label className="ui-label">Nhà cung cấp *</label>
+                <select
+                  className="ui-input"
+                  value={form.supplierId}
+                  onChange={(e) => setForm((prev) => ({ ...prev, supplierId: e.target.value }))}
+                >
+                  <option value="">Chọn nhà cung cấp</option>
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="ui-label">Chi nhánh *</label>
+                <select
+                  className="ui-input"
+                  value={form.branchId}
+                  onChange={(e) => setForm((prev) => ({ ...prev, branchId: e.target.value }))}
+                >
+                  <option value="">Chọn chi nhánh</option>
+                  {branches.map((branch) => (
+                    <option key={branch.id} value={branch.id}>{branch.name}</option>
+                  ))}
+                </select>
               </div>
 
-              {form.items.length > 0 ? (
-                <div className="space-y-3">
-                  {form.items.map((item, index) => (
-                    <div key={index} className="space-y-2 rounded border border-slate-200 p-3">
-                      <div>
-                        <label className="ui-label text-xs">Sản phẩm</label>
-                        <select className="ui-input text-sm" value={item.productId} onChange={(e) => updateFormItem(index, 'productId', e.target.value)}>
-                          <option value="">Chọn sản phẩm</option>
-                          {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="ui-label text-xs">Số lượng</label>
-                          <input type="number" min="1" className="ui-input text-sm" value={item.quantity} onChange={(e) => updateFormItem(index, 'quantity', parseInt(e.target.value) || 1)} />
-                        </div>
-                        <div>
-                          <label className="ui-label text-xs">Giá nhập</label>
-                          <input type="number" min="0" step="0.01" className="ui-input text-sm" value={item.cost} onChange={(e) => updateFormItem(index, 'cost', parseFloat(e.target.value) || 0)} />
-                        </div>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => removeItemFromForm(index)}
-                        disabled={createMutation.isPending}
-                      >
-                        Xoá
-                      </Button>
-                    </div>
-                  ))}
+              <div className="space-y-3 rounded-lg border border-slate-200 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h4 className="font-semibold">Danh sách sản phẩm</h4>
+                  <Button type="button" onClick={addItemToForm} disabled={createMutation.isPending}>
+                    + Thêm
+                  </Button>
                 </div>
-              ) : (
-                <p className="text-sm text-slate-500">Chưa có sản phẩm nào. Hãy thêm sản phẩm.</p>
-              )}
-            </div>
 
-            <div>
-              <label className="ui-label">Ghi chú</label>
-              <textarea className="ui-input" rows={3} value={form.notes} onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))} placeholder="Ghi chú cho đơn nhập kho" />
-            </div>
+                {form.items.length > 0 ? (
+                  <div className="space-y-3">
+                    {form.items.map((item, index) => (
+                      <div key={index} className="space-y-2 rounded border border-slate-200 p-3">
+                        <div>
+                          <label className="ui-label text-xs">Sản phẩm</label>
+                          <select
+                            className="ui-input text-sm"
+                            value={item.productId}
+                            onChange={(e) => updateFormItem(index, 'productId', e.target.value)}
+                          >
+                            <option value="">Chọn sản phẩm</option>
+                            {products.map((product) => (
+                              <option key={product.id} value={product.id}>{product.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="ui-label text-xs">Số lượng</label>
+                            <input
+                              type="number"
+                              min="1"
+                              className="ui-input text-sm"
+                              value={item.quantity}
+                              onChange={(e) => updateFormItem(index, 'quantity', parseInt(e.target.value, 10) || 1)}
+                            />
+                          </div>
+                          <div>
+                            <label className="ui-label text-xs">Giá nhập</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              className="ui-input text-sm"
+                              value={item.cost}
+                              onChange={(e) => updateFormItem(index, 'cost', parseFloat(e.target.value) || 0)}
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => removeItemFromForm(index)}
+                          disabled={createMutation.isPending}
+                        >
+                          Xoá
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    title="Chưa có sản phẩm nào"
+                    description="Hãy thêm ít nhất một dòng sản phẩm để tạo đơn nhập kho."
+                  />
+                )}
+              </div>
 
-            <Button type="button" onClick={handleSubmitOrder} disabled={!form.supplierId || !form.branchId || form.items.length === 0 || createMutation.isPending}>
-              {createMutation.isPending ? 'Đang tạo...' : 'Tạo đơn'}
-            </Button>
-          </div>
+              <div>
+                <label className="ui-label">Ghi chú</label>
+                <textarea
+                  className="ui-input"
+                  rows={3}
+                  value={form.notes}
+                  onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Ghi chú cho đơn nhập kho"
+                />
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleSubmitOrder}
+                disabled={!form.supplierId || !form.branchId || form.items.length === 0 || createMutation.isPending}
+              >
+                {createMutation.isPending ? 'Đang tạo...' : 'Tạo đơn'}
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="ui-card print:hidden">
@@ -320,7 +408,14 @@ export default function PurchaseOrdersPage() {
 
           <div>
             <h4 className="mb-2 font-semibold text-slate-700">Danh sách sản phẩm</h4>
-            <DataTable columns={itemsColumns} data={activeOrder.items ?? []} rowKey={(_, index) => `${activeOrder.id}-${index}`} isLoading={false} emptyTitle="Không có mặt hàng" emptyDescription="Đơn này chưa có chi tiết sản phẩm." />
+            <DataTable
+              columns={itemsColumns}
+              data={activeOrder.items ?? []}
+              rowKey={(_, index) => `${activeOrder.id}-${index}`}
+              isLoading={false}
+              emptyTitle="Không có mặt hàng"
+              emptyDescription="Đơn này chưa có chi tiết sản phẩm."
+            />
           </div>
         </div>
       )}

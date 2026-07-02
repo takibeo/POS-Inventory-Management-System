@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { DataTable, type DataTableColumn, PageHeader } from '../components/ui';
+import { Button, DataTable, EmptyState, LoadingSpinner, type DataTableColumn, PageHeader } from '../components/ui';
 import { useBranchContext } from '../contexts/BranchContext';
 import inventoryService from '../services/inventoryService';
 
@@ -22,7 +22,7 @@ function downloadCsv(filename: string, rows: InventoryTransactionRow[]) {
     header.join(','),
     ...rows.map((row) =>
       [row.date, row.product, row.transactionType, row.quantity, row.remark ?? '', row.branch]
-        .map((value) => `"${String(value).replaceAll('"', '""')}"`)
+        .map((value) => `"${String(value).split('"').join('""')}"`)
         .join(',')
     ),
   ].join('\n');
@@ -37,7 +37,7 @@ function downloadCsv(filename: string, rows: InventoryTransactionRow[]) {
 }
 
 export default function StockMovementLog() {
-  const { selectedBranchId, branches } = useBranchContext();
+  const { selectedBranchId, branches, loading } = useBranchContext();
   const [productFilter, setProductFilter] = useState('');
   const [transactionType, setTransactionType] = useState<(typeof transactionTypeOptions)[number]>('ALL');
   const [fromDate, setFromDate] = useState('');
@@ -55,6 +55,7 @@ export default function StockMovementLog() {
       return inventoryService.getTransactionsByBranch(selectedBranchId);
     },
     enabled: !!selectedBranchId,
+    retry: false,
   });
 
   const rows: InventoryTransactionRow[] = (data ?? []).map((tx: any) => ({
@@ -87,65 +88,75 @@ export default function StockMovementLog() {
     { key: 'branch', header: 'Chi nhánh' },
   ];
 
+  const hasRows = filteredRows.length > 0;
+
   return (
     <div className="space-y-6">
       <PageHeader title="Lịch sử tồn kho" description="Theo dõi nhập, bán và điều chỉnh tồn kho theo chi nhánh." />
 
-      <div className="ui-card space-y-4">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <input
-            className="ui-input"
-            placeholder="Lọc theo sản phẩm"
-            value={productFilter}
-            onChange={(e) => setProductFilter(e.target.value)}
-          />
-          <select
-            className="ui-input"
-            value={transactionType}
-            onChange={(e) => setTransactionType(e.target.value as typeof transactionType)}
-          >
-            {transactionTypeOptions.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-          <input className="ui-input" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-          <input className="ui-input" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => downloadCsv('stock-movement.csv', filteredRows)}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
-          >
-            Export CSV
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setProductFilter('');
-              setTransactionType('ALL');
-              setFromDate('');
-              setToDate('');
-            }}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700"
-          >
-            Xoá lọc
-          </button>
-        </div>
-
-        <DataTable
-          columns={columns}
-          data={filteredRows}
-          rowKey={(row) => row.id}
-          isLoading={isLoading}
-          error={isError ? 'Không thể tải lịch sử tồn kho.' : null}
-          emptyTitle="Chưa có giao dịch"
-          emptyDescription="Lịch sử tồn kho sẽ hiển thị ở đây."
+      {loading ? (
+        <LoadingSpinner label="Đang tải chi nhánh..." />
+      ) : !selectedBranchId ? (
+        <EmptyState
+          title="Chưa chọn chi nhánh"
+          description="Hãy chọn chi nhánh ở thanh trên cùng để xem lịch sử tồn kho tương ứng."
         />
-      </div>
+      ) : (
+        <div className="ui-card space-y-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <input
+              className="ui-input"
+              placeholder="Lọc theo sản phẩm"
+              value={productFilter}
+              onChange={(e) => setProductFilter(e.target.value)}
+            />
+            <select
+              className="ui-input"
+              value={transactionType}
+              onChange={(e) => setTransactionType(e.target.value as typeof transactionType)}
+            >
+              {transactionTypeOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+            <input className="ui-input" type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
+            <input className="ui-input" type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+          </div>
+
+          <div className="flex flex-wrap justify-between gap-2">
+            <p className="text-sm text-slate-500">Chi nhánh đang xem: <span className="font-medium text-slate-900">{branchName}</span></p>
+            <div className="flex gap-2">
+              <Button type="button" variant="secondary" onClick={() => downloadCsv('stock-movement.csv', filteredRows)} disabled={!hasRows}>
+                Export CSV
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setProductFilter('');
+                  setTransactionType('ALL');
+                  setFromDate('');
+                  setToDate('');
+                }}
+              >
+                Xoá lọc
+              </Button>
+            </div>
+          </div>
+
+          <DataTable
+            columns={columns}
+            data={filteredRows}
+            rowKey={(row) => row.id}
+            isLoading={isLoading}
+            error={isError ? 'Không thể tải lịch sử tồn kho.' : null}
+            emptyTitle="Chưa có giao dịch"
+            emptyDescription="Lịch sử tồn kho sẽ hiển thị ở đây."
+          />
+        </div>
+      )}
     </div>
   );
 }
