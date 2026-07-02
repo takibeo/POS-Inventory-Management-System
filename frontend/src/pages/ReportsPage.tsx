@@ -5,9 +5,6 @@ import reportService from '../services/reportService';
 import { formatCurrency } from '../utils/formatters';
 import type { BestSeller, LowStockItem } from '../types/report';
 
-const formatCurrency = (v: number) =>
-  v.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' });
-
 type ReportTab = 'revenue' | 'profit' | 'best-sellers' | 'low-stock';
 
 const tabs: { key: ReportTab; label: string }[] = [
@@ -159,7 +156,9 @@ export default function ReportsPage() {
                 <p className="mt-1 text-xl font-bold text-slate-900">{revenueQuery.data?.totalItems ?? 0}</p>
               </div>
             </div>
-        )}
+          )}
+        </div>
+      )}
 
       {activeTab === 'profit' && !profitQuery.isLoading && (
         <div className="ui-card space-y-4">
@@ -181,7 +180,9 @@ export default function ReportsPage() {
                 <p className="mt-1 text-xl font-bold text-red-600">{formatCurrency(profitQuery.data?.totalCost ?? 0)}</p>
               </div>
             </div>
-        )}
+          )}
+        </div>
+      )}
 
       {activeTab === 'best-sellers' && !bestSellersQuery.isLoading && (
         <div className="ui-card">
