@@ -42,6 +42,9 @@ export default function DashboardPage() {
     const profitTrend = profitTrendQuery.data ?? [];
 
     const reportsUnavailable = revenueQuery.isError && profitQuery.isError;
+    const isRefetching =
+        revenueQuery.isRefetching || profitQuery.isRefetching ||
+        revenueTrendQuery.isRefetching || profitTrendQuery.isRefetching;
 
     const totalRevenue = revenueQuery.data?.totalRevenue ?? 0;
     const totalProfit = profitQuery.data?.totalProfit ?? 0;
@@ -58,18 +61,60 @@ export default function DashboardPage() {
             .sort((a, b) => b.productCount - a.productCount);
     }, [products]);
 
+    const handleRefetch = () => {
+        revenueQuery.refetch();
+        profitQuery.refetch();
+        revenueTrendQuery.refetch();
+        profitTrendQuery.refetch();
+        bestSellersQuery.refetch();
+        lowStockQuery.refetch();
+    };
+
     return (
         <div className="space-y-6">
-            <PageHeader
-                title="Dashboard"
-                description="Tổng quan doanh thu, lợi nhuận và tồn kho."
-            />
+            <div className="flex items-start justify-between">
+                <PageHeader
+                    title="Dashboard"
+                    description="Tổng quan doanh thu, lợi nhuận và tồn kho."
+                />
+                <button
+                    type="button"
+                    onClick={handleRefetch}
+                    disabled={isRefetching}
+                    className="flex items-center gap-2 rounded-xl border border-slate-300
+            bg-white px-3 py-2 text-sm font-medium text-slate-700
+            transition hover:bg-slate-50 disabled:opacity-50 mt-1"
+                >
+                    <svg
+                        className={`h-4 w-4 ${isRefetching ? 'animate-spin' : ''}`}
+                        fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    {isRefetching ? 'Đang tải...' : 'Làm mới'}
+                </button>
+            </div>
 
             {reportsUnavailable && (
-                <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3
-          text-sm text-amber-800">
-                    API báo cáo chưa sẵn sàng — biểu đồ đang dùng mock data.
-                </p>
+                <div className="flex items-start gap-3 rounded-xl border border-amber-200
+          bg-amber-50 px-4 py-3">
+                    <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-600"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    </svg>
+                    <div>
+                        <p className="text-sm font-medium text-amber-800">
+                            API báo cáo chưa sẵn sàng
+                        </p>
+                        <p className="text-xs text-amber-700 mt-0.5">
+                            Biểu đồ đang dùng mock data. Backend cần triển khai
+                            <code className="mx-1 font-mono">/api/reports/*</code>
+                            để hiển thị dữ liệu thực.
+                        </p>
+                    </div>
+                </div>
             )}
 
             {/* KPI Cards */}
