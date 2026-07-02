@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -41,6 +43,17 @@ class CategoryServiceImplTest {
     }
 
     @Test
+    void createCategoryBlankNameThrows() {
+        var req = new CategoryRequest(); req.setName("   ");
+        assertThrows(RuntimeException.class, () -> categoryService.createCategory(req));
+    }
+
+    @Test
+    void createCategoryNullRequestThrows() {
+        assertThrows(RuntimeException.class, () -> categoryService.createCategory(null));
+    }
+
+    @Test
     void updateCategorySuccess() {
         var req = new CategoryRequest(); req.setName("CAT2");
         when(categoryRepository.findById(any())).thenReturn(java.util.Optional.of(new com.pos.entity.Category()));
@@ -48,6 +61,12 @@ class CategoryServiceImplTest {
         var resp = categoryService.updateCategory(java.util.UUID.randomUUID(), req);
         assertNotNull(resp);
         verify(categoryRepository).save(any());
+    }
+
+    @Test
+    void updateCategoryNullRequestThrows() {
+        UUID id = UUID.randomUUID();
+        assertThrows(RuntimeException.class, () -> categoryService.updateCategory(id, null));
     }
 
     @Test

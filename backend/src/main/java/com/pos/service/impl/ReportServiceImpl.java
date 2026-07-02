@@ -103,6 +103,10 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public List<BestSellerReportResponse> getBestSellers(int limit) {
         log.info("ReportService.getBestSellers limit={}", limit);
+        if (limit <= 0) {
+            return List.of();
+        }
+
         Map<String, BestSellerReportResponse> productStats = new HashMap<>();
 
         saleInvoiceRepository.findAll().stream()

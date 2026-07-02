@@ -2,6 +2,7 @@ package com.pos.exception;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class ErrorResponse {
     private Instant timestamp;
@@ -20,6 +21,7 @@ public class ErrorResponse {
         this.errorCode = errorCode;
         this.message = message;
         this.path = path;
+        this.fieldErrors = new LinkedHashMap<>();
     }
 
     public Instant getTimestamp() {

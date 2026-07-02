@@ -99,14 +99,36 @@ Thư mục: `frontend/`
 - `POST /api/auth/refresh`: lấy token mới
 - `POST /api/auth/logout`: đăng xuất
 
+## Trạng thái hiện tại
+
+Dự án đã có nền tảng backend và frontend hoạt động, với các chức năng chính về:
+- Auth và phân quyền
+- Quản lý sản phẩm, danh mục, nhà cung cấp, chi nhánh
+- Quản lý kho và giao dịch tồn kho
+- Đơn nhập kho, hóa đơn bán hàng
+- Báo cáo doanh thu/lợi nhuận/tồn kho thấp
+
+Các phần đã được cải thiện gần đây:
+- Edge case handling cho báo cáo và inventory
+- Test coverage cho các service cốt lõi
+- Swagger/OpenAPI docs cho các endpoint quan trọng
+
+### Tổng quan hệ thống
+
+Hệ thống được thiết kế để hỗ trợ quy trình bán hàng và quản lý kho trong môi trường cửa hàng hoặc doanh nghiệp vừa và nhỏ, với các chức năng chính gồm:
+- Quản lý người dùng, phân quyền và đăng nhập an toàn
+- Quản lý sản phẩm, danh mục, nhà cung cấp và chi nhánh
+- Theo dõi tồn kho, điều chỉnh hàng hóa và xử lý nhập/xuất kho
+- Quản lý đơn đặt hàng và hóa đơn bán hàng
+- Cung cấp báo cáo doanh thu, lợi nhuận và các mặt hàng tồn kho thấp
+
 ## Điểm cần hoàn thiện
 
-Mặc dù kiến trúc đã có, hiện cần tiếp tục bổ sung:
+Các mục còn tiếp tục cải thiện:
 - Form validation chi tiết với React Hook Form + Zod
-- Mapper DTO/Entity backend
-- CRUD frontend cho các module: category, supplier, branch, purchase order, sale invoice, inventory
-- Xử lý phân quyền người dùng theo vai trò
-- Unit test / integration test
+- CRUD frontend hoàn thiện cho một số module còn thiếu
+- Bổ sung thêm integration test và E2E test
+- Tối ưu UI/UX và trải nghiệm demo
 
 ## Thông tin thêm
 

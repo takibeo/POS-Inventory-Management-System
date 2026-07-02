@@ -2,6 +2,7 @@ package com.pos.service.impl;
 
 import com.pos.entity.Inventory;
 import com.pos.entity.InventoryTransaction;
+import com.pos.exception.BusinessException;
 import com.pos.repository.InventoryRepository;
 import com.pos.repository.InventoryTransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +33,7 @@ class InventoryServiceImplTest {
     void adjustInventorySuccess() {
         UUID id = UUID.randomUUID();
         Inventory inv = new Inventory(); inv.setId(id); inv.setQuantity(10); inv.setAvailableQuantity(10);
-        when(inventoryRepository.findById(id)).thenReturn(Optional.of(inv));
+        when(inventoryRepository.findByIdForUpdate(id)).thenReturn(Optional.of(inv));
         when(inventoryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(transactionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -40,6 +41,29 @@ class InventoryServiceImplTest {
         assertNotNull(tx);
         verify(inventoryRepository).save(any());
         verify(transactionRepository).save(any());
+    }
+
+    @Test
+    void adjustInventoryUsesLockForConcurrentUpdates() {
+        UUID id = UUID.randomUUID();
+        Inventory inv = new Inventory(); inv.setId(id); inv.setQuantity(10); inv.setAvailableQuantity(10);
+        when(inventoryRepository.findByIdForUpdate(id)).thenReturn(Optional.of(inv));
+        when(inventoryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(transactionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        inventoryService.adjustInventory(id, 1, "concurrency-check");
+
+        verify(inventoryRepository).findByIdForUpdate(id);
+        verify(inventoryRepository, never()).findById(id);
+    }
+
+    @Test
+    void adjustInventoryBelowZeroThrows() {
+        UUID id = UUID.randomUUID();
+        Inventory inv = new Inventory(); inv.setId(id); inv.setQuantity(2); inv.setAvailableQuantity(2);
+        when(inventoryRepository.findByIdForUpdate(id)).thenReturn(Optional.of(inv));
+
+        assertThrows(BusinessException.class, () -> inventoryService.adjustInventory(id, -5, "test"));
     }
 
     @Test

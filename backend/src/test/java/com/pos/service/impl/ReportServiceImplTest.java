@@ -98,6 +98,26 @@ class ReportServiceImplTest {
     }
 
     @Test
+    void bestSellers_returnsEmptyWhenLimitIsNotPositive() {
+        SaleInvoice invoice = new SaleInvoice();
+        SaleInvoiceItem item = new SaleInvoiceItem();
+        Product p = new Product();
+        p.setId(java.util.UUID.randomUUID());
+        p.setName("Prod A");
+        p.setCost(10.0);
+        item.setProduct(p);
+        item.setQuantity(3);
+        item.setUnitPrice(20.0);
+        invoice.setItems(java.util.Set.of(item));
+
+        when(saleInvoiceRepository.findAll()).thenReturn(List.of(invoice));
+
+        List<BestSellerReportResponse> result = reportService.getBestSellers(-1);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     void lowStock_returnsInventoriesBelowReorder() {
         Inventory inv = new Inventory();
         Product p = new Product();
