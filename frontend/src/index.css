@@ -51,4 +51,16 @@ body {
   .ui-badge-slate {
     @apply ui-badge bg-slate-100 text-slate-700;
   }
+
+  .ui-badge-blue {
+    @apply ui-badge bg-blue-100 text-blue-700;
+  }
+
+  .ui-transition {
+    @apply transition-all duration-150 ease-in-out;
+  }
+
+  .ui-hover-lift {
+    @apply transition-transform duration-150 hover:-translate-y-0.5;
+  }
 }
