@@ -6,6 +6,7 @@ import {
   Button,
   ConfirmModal,
   DataTable,
+  EmptyState,
   type DataTableColumn,
   PageHeader,
   TableRowActions,
@@ -32,9 +33,10 @@ export default function BranchesPage() {
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Branch | null>(null);
 
-  const { data: branches, isLoading, isError } = useQuery<Branch[], Error>({
+  const { data: branches, isLoading, isError, refetch } = useQuery<Branch[], Error>({
     queryKey: ['branches'],
     queryFn: branchService.getBranches,
+    retry: false,
   });
 
   const createMutation = useMutation({
@@ -165,22 +167,40 @@ export default function BranchesPage() {
         </div>
 
         <div className="ui-card">
-          <h3 className="mb-4 text-lg font-semibold">Danh sách chi nhánh</h3>
-          <DataTable
-            columns={columns}
-            data={branches ?? []}
-            rowKey={(row) => row.id}
-            isLoading={isLoading}
-            error={isError ? 'Không thể tải danh sách chi nhánh.' : null}
-            emptyTitle="Chưa có chi nhánh"
-            emptyDescription="Thêm chi nhánh mới bằng form bên trái."
-            renderActions={(branch) => (
-              <TableRowActions
-                onEdit={() => handleEdit(branch)}
-                onDelete={() => setDeleteTarget(branch)}
-              />
-            )}
-          />
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="text-lg font-semibold">Danh sách chi nhánh</h3>
+            <Button type="button" variant="secondary" onClick={() => refetch()} disabled={isLoading}>
+              Làm mới
+            </Button>
+          </div>
+
+          {isError ? (
+            <EmptyState
+              variant="error"
+              title="Không thể tải danh sách chi nhánh"
+              description="Vui lòng kiểm tra API branches rồi thử lại."
+              action={
+                <Button type="button" variant="secondary" onClick={() => refetch()}>
+                  Thử lại
+                </Button>
+              }
+            />
+          ) : (
+            <DataTable
+              columns={columns}
+              data={branches ?? []}
+              rowKey={(row) => row.id}
+              isLoading={isLoading}
+              emptyTitle="Chưa có chi nhánh"
+              emptyDescription="Thêm chi nhánh mới bằng form bên trái."
+              renderActions={(branch) => (
+                <TableRowActions
+                  onEdit={() => handleEdit(branch)}
+                  onDelete={() => setDeleteTarget(branch)}
+                />
+              )}
+            />
+          )}
         </div>
       </div>
 

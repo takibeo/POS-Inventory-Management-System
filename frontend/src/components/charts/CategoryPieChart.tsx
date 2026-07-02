@@ -20,6 +20,30 @@ const COLORS = [
     '#f97316', '#fb923c',
 ];
 
+type LabelProps = {
+    cx: number;
+    cy: number;
+    midAngle: number;
+    innerRadius: number;
+    outerRadius: number;
+    percent: number;
+};
+
+const RADIAN = Math.PI / 180;
+
+function CustomLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }: LabelProps) {
+    if (percent < 0.05) return null;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    return (
+        <text x={x} y={y} fill="white" textAnchor="middle"
+              dominantBaseline="central" style={{ fontSize: 11, fontWeight: 600 }}>
+            {`${(percent * 100).toFixed(0)}%`}
+        </text>
+    );
+}
+
 export default function CategoryPieChart({ data, isLoading = false }: Props) {
     if (isLoading) return <SkeletonChart />;
 
@@ -40,23 +64,28 @@ export default function CategoryPieChart({ data, isLoading = false }: Props) {
                     nameKey="categoryName"
                     cx="50%"
                     cy="45%"
-                    outerRadius={85}
-                    label={({ categoryName, percent }) =>
-                        percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''
-                    }
+                    innerRadius={55}
+                    outerRadius={90}
                     labelLine={false}
+                    label={CustomLabel}
                 >
                     {data.map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                 </Pie>
                 <Tooltip
-                    formatter={(v: number, name: string) => [v, name]}
+                    formatter={(v: number, name: string) => [v + ' sản phẩm', name]}
+                    contentStyle={{
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: 12,
+                    }}
                 />
                 <Legend
                     formatter={(value) => (
                         <span style={{ fontSize: 11, color: '#475569' }}>{value}</span>
                     )}
+                    wrapperStyle={{ paddingTop: 8 }}
                 />
             </PieChart>
         </ResponsiveContainer>
