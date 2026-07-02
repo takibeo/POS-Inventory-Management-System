@@ -58,6 +58,8 @@ class AuthServiceImplTest {
         when(userRepository.findByUsername("bob")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrong", "encoded")).thenReturn(false);
 
+        var req = new LoginRequest("bob", "wrong");
+        assertThrows(BadCredentialsException.class, () -> authService.login(req));
     }
 }
 

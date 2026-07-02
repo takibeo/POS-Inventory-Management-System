@@ -164,10 +164,21 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ErrorResponse body = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 AppErrorCodes.INVALID_JSON,
-                "Yêu cầu JSON không hợp lệ",
+                "Yêu cầu JSON không hợp lệ hoặc cú pháp JSON sai",
                 extractPath(request)
         );
         return new ResponseEntity<>(body, headers, status);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                AppErrorCodes.VALIDATION_ERROR,
+                ex.getMessage() != null ? ex.getMessage() : "Tham số không hợp lệ",
+                extractPath(request)
+        );
+        return ResponseEntity.badRequest().body(body);
     }
 
     private String extractPath(WebRequest request) {
