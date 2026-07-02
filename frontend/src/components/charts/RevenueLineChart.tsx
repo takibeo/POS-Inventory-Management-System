@@ -1,11 +1,12 @@
 import {
     CartesianGrid,
-    Line,
-    LineChart,
+    Area,
+    AreaChart,
     ResponsiveContainer,
     Tooltip,
     XAxis,
     YAxis,
+    Legend,
 } from 'recharts';
 import { formatAxisValue, formatCurrency, formatDateShort } from '../../utils/formatters';
 import { SkeletonChart } from '../ui/Skeleton';
@@ -29,32 +30,46 @@ export default function RevenueLineChart({ data, isLoading = false }: Props) {
 
     return (
         <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+            <AreaChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
                     dataKey="date"
                     tickFormatter={formatDateShort}
-                    tick={{ fontSize: 11 }}
+                    tick={{ fontSize: 11, fill: '#94a3b8' }}
                     interval="preserveStartEnd"
+                    axisLine={false}
+                    tickLine={false}
                 />
                 <YAxis
                     tickFormatter={formatAxisValue}
-                    tick={{ fontSize: 11 }}
-                    width={50}
+                    tick={{ fontSize: 11, fill: '#94a3b8' }}
+                    width={55}
+                    axisLine={false}
+                    tickLine={false}
                 />
                 <Tooltip
                     formatter={(v: number) => [formatCurrency(v), 'Doanh thu']}
                     labelFormatter={(label: string) => `Ngày ${formatDateShort(label)}`}
+                    contentStyle={{
+                        borderRadius: '10px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: 12,
+                    }}
                 />
-                <Line
+                <Legend
+                    formatter={() => 'Doanh thu'}
+                    wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+                />
+                <Area
                     type="monotone"
                     dataKey="revenue"
                     stroke="#10b981"
                     strokeWidth={2}
+                    fill="#10b98120"
                     dot={false}
-                    activeDot={{ r: 5 }}
+                    activeDot={{ r: 5, strokeWidth: 0 }}
                 />
-            </LineChart>
+            </AreaChart>
         </ResponsiveContainer>
     );
 }
