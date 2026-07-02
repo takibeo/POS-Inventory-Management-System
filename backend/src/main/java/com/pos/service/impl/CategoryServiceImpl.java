@@ -45,8 +45,15 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
+        if (request == null) {
+            throw new BusinessException("CATEGORY_REQUEST_REQUIRED", "Yêu cầu danh mục không được để trống");
+        }
         log.info("CategoryService.createCategory request={}", request.getName());
-        if (categoryRepository.existsByNameIgnoreCase(request.getName())) {
+        String name = request.getName() == null ? "" : request.getName().trim();
+        if (name.isBlank()) {
+            throw new BusinessException("CATEGORY_NAME_REQUIRED", "Tên danh mục không được để trống");
+        }
+        if (categoryRepository.existsByNameIgnoreCase(name)) {
             throw new BusinessException("CATEGORY_NAME_DUPLICATE",
                     "Danh mục '" + request.getName() + "' đã tồn tại");
         }
@@ -56,6 +63,7 @@ public class CategoryServiceImpl implements CategoryService {
         Instant now = Instant.now();
         category.setCreatedAt(now);
         category.setUpdatedAt(now);
+        category.setName(name);
         CategoryMapper.updateEntityFromRequest(category, request);
         return CategoryMapper.toResponse(categoryRepository.save(category));
     }
@@ -63,15 +71,23 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryResponse updateCategory(UUID id, CategoryRequest request) {
+        if (request == null) {
+            throw new BusinessException("CATEGORY_REQUEST_REQUIRED", "Yêu cầu danh mục không được để trống");
+        }
         log.info("CategoryService.updateCategory id={} name={}", id, request.getName());
         Category existing = findCategoryEntity(id);
 
+        String name = request.getName() == null ? "" : request.getName().trim();
+        if (name.isBlank()) {
+            throw new BusinessException("CATEGORY_NAME_REQUIRED", "Tên danh mục không được để trống");
+        }
         if (categoryRepository.existsByNameIgnoreCaseAndIdNot(
-                request.getName(), id)) {
+                name, id)) {
             throw new BusinessException("CATEGORY_NAME_DUPLICATE",
                     "Danh mục '" + request.getName() + "' đã được sử dụng");
         }
 
+        existing.setName(name);
         CategoryMapper.updateEntityFromRequest(existing, request);
         existing.setUpdatedAt(Instant.now());
         return CategoryMapper.toResponse(categoryRepository.save(existing));
