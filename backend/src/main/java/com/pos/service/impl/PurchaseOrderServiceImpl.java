@@ -80,7 +80,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         purchaseOrder.setOrderNumber(generateOrderNumber());
         purchaseOrder.setSupplier(supplier);
         purchaseOrder.setBranch(branch);
-        purchaseOrder.setStatus(request.getStatus() != null ? request.getStatus().toUpperCase() : "DRAFT");
+        purchaseOrder.setStatus(request.getStatus() != null ? request.getStatus().toUpperCase() : "PENDING");
         purchaseOrder.setNotes(request.getNotes());
         purchaseOrder.setOrderedDate(LocalDate.now());
         purchaseOrder.setCreatedAt(Instant.now());
