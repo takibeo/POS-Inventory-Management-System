@@ -1,7 +1,8 @@
 package com.pos.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -9,7 +10,8 @@ import java.util.UUID;
 @Table(name = "inventories", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"branch_id", "product_id"})
 })
-@Data
+@Getter
+@Setter
 public class Inventory {
 
     @Id

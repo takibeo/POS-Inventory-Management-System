@@ -12,6 +12,16 @@ import {
 } from '../components/ui';
 import categoryService from '../services/categoryService';
 import type { Category } from '../types/category';
+import { 
+  Plus, 
+  Layers, 
+  Tag, 
+  Edit, 
+  Trash2, 
+  X,
+  FolderTree,
+  FileText
+} from 'lucide-react';
 
 type CategoryFormValues = {
   name: string;
@@ -27,6 +37,7 @@ export default function CategoriesPage() {
   const queryClient = useQueryClient();
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [showForm, setShowForm] = useState(false);
 
   const { data: categories, isLoading, isError } = useQuery<Category[], Error>({
     queryKey: ['categories'],
@@ -39,6 +50,7 @@ export default function CategoriesPage() {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       reset(defaultValues);
       setEditingCategory(null);
+      setShowForm(false);
       toast.success('Tạo danh mục thành công.');
     },
     onError: () => toast.error('Không thể tạo danh mục.'),
@@ -51,6 +63,7 @@ export default function CategoriesPage() {
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       reset(defaultValues);
       setEditingCategory(null);
+      setShowForm(false);
       toast.success('Cập nhật danh mục thành công.');
     },
     onError: () => toast.error('Không thể cập nhật danh mục.'),
@@ -86,65 +99,176 @@ export default function CategoriesPage() {
     setEditingCategory(category);
     setValue('name', category.name);
     setValue('description', category.description ?? '');
+    setShowForm(true);
+  };
+
+  const handleAddNew = () => {
+    setEditingCategory(null);
+    reset(defaultValues);
+    setShowForm(true);
   };
 
   const handleCancel = () => {
     setEditingCategory(null);
     reset(defaultValues);
+    setShowForm(false);
   };
 
   const columns: DataTableColumn<Category>[] = [
-    { key: 'name', header: 'Tên' },
-    { key: 'description', header: 'Mô tả', render: (row) => row.description ?? '—' },
+    { 
+      key: 'name', 
+      header: 'Tên danh mục',
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <FolderTree className="w-4 h-4 text-indigo-600" />
+          </div>
+          <div>
+            <p className="font-medium text-slate-900">{row.name}</p>
+            {row.description && (
+              <p className="text-xs text-slate-400 truncate max-w-[200px]">{row.description}</p>
+            )}
+          </div>
+        </div>
+      )
+    },
+    { 
+      key: 'description', 
+      header: 'Mô tả', 
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <FileText className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-slate-600">{row.description ?? '—'}</span>
+        </div>
+      )
+    }
   ];
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Quản lý danh mục"
-        description="Tạo, sửa và xóa danh mục sản phẩm."
-      />
+      {/* Page Header với gradient */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 p-6 shadow-lg">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-xl" />
+        
+        <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              <Layers className="w-6 h-6" />
+              Quản lý danh mục
+            </h1>
+            <p className="text-emerald-100 text-sm mt-1">
+              Quản lý danh mục sản phẩm trong hệ thống
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-sm">
+              {categories?.length || 0} danh mục
+            </span>
+            <Button 
+              type="button" 
+              variant="secondary"
+              className="bg-white/90 hover:bg-white text-emerald-700 hover:text-emerald-800 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 font-medium border border-white/20"
+              onClick={handleAddNew}
+            >
+              <Plus className="w-4 h-4" />
+              Thêm danh mục
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
-        <div className="ui-card">
-          <h3 className="mb-4 text-lg font-semibold">
-            {editingCategory ? 'Sửa danh mục' : 'Thêm danh mục mới'}
-          </h3>
-
-          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-            <div>
-              <label className="ui-label">Tên danh mục</label>
-              <input
-                type="text"
-                {...register('name', { required: 'Tên danh mục là bắt buộc' })}
-                className="ui-input"
-              />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+      {/* Main Content */}
+      <div className={`grid gap-6 ${showForm ? 'lg:grid-cols-[420px_1fr]' : 'grid-cols-1'}`}>
+        {/* Form Section */}
+        {showForm && (
+          <div className="ui-card relative">
+            <button
+              type="button"
+              onClick={handleCancel}
+              className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <X className="w-4 h-4 text-slate-400" />
+            </button>
+            
+            <div className="flex items-center gap-2 mb-5">
+              <div className={`p-2 rounded-lg ${editingCategory ? 'bg-blue-100' : 'bg-emerald-100'}`}>
+                {editingCategory ? (
+                  <Edit className="w-5 h-5 text-blue-600" />
+                ) : (
+                  <Plus className="w-5 h-5 text-emerald-600" />
+                )}
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                {editingCategory ? 'Sửa danh mục' : 'Thêm danh mục mới'}
+              </h3>
             </div>
 
-            <div>
-              <label className="ui-label">Mô tả</label>
-              <textarea rows={4} {...register('description')} className="ui-input" />
-            </div>
+            <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+              <div>
+                <label className="ui-label flex items-center gap-1">
+                  <Tag className="w-3.5 h-3.5" />
+                  Tên danh mục <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  {...register('name', { required: 'Tên danh mục là bắt buộc' })}
+                  className="ui-input"
+                  placeholder="Nhập tên danh mục..."
+                />
+                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+              </div>
 
-            <div className="flex flex-wrap gap-3 pt-2">
-              <Button
-                type="submit"
-                disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
-              >
-                {editingCategory ? 'Cập nhật' : 'Tạo danh mục'}
-              </Button>
-              {editingCategory && (
+              <div>
+                <label className="ui-label flex items-center gap-1">
+                  <FileText className="w-3.5 h-3.5" />
+                  Mô tả
+                </label>
+                <textarea 
+                  rows={4} 
+                  {...register('description')} 
+                  className="ui-input" 
+                  placeholder="Nhập mô tả danh mục..."
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-2 border-t border-slate-200">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || createMutation.isPending || updateMutation.isPending}
+                  className="flex items-center gap-2"
+                >
+                  {editingCategory ? (
+                    <>
+                      <Edit className="w-4 h-4" />
+                      Cập nhật
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Tạo danh mục
+                    </>
+                  )}
+                </Button>
                 <Button type="button" variant="secondary" onClick={handleCancel}>
                   Hủy
                 </Button>
-              )}
-            </div>
-          </form>
-        </div>
+              </div>
+            </form>
+          </div>
+        )}
 
+        {/* Table Section */}
         <div className="ui-card">
-          <h3 className="mb-4 text-lg font-semibold">Danh sách danh mục</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Danh sách danh mục</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Tổng {categories?.length || 0} danh mục
+              </p>
+            </div>
+          </div>
+
           <DataTable
             columns={columns}
             data={categories ?? []}
@@ -152,7 +276,7 @@ export default function CategoriesPage() {
             isLoading={isLoading}
             error={isError ? 'Không thể tải danh sách danh mục.' : null}
             emptyTitle="Chưa có danh mục"
-            emptyDescription="Thêm danh mục mới bằng form bên trái."
+            emptyDescription="Nhấn 'Thêm danh mục' để tạo danh mục đầu tiên."
             renderActions={(category) => (
               <TableRowActions
                 onEdit={() => handleEdit(category)}
@@ -163,11 +287,13 @@ export default function CategoriesPage() {
         </div>
       </div>
 
+      {/* Delete Confirmation Modal */}
       <ConfirmModal
         isOpen={!!deleteTarget}
         title="Xóa danh mục"
-        message={`Bạn có chắc muốn xóa danh mục "${deleteTarget?.name}"?`}
+        message={`Bạn có chắc muốn xóa danh mục "${deleteTarget?.name}"? Hành động này không thể hoàn tác.`}
         confirmLabel="Xóa"
+        variant="danger"
         isLoading={deleteMutation.isPending}
         onCancel={() => setDeleteTarget(null)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}

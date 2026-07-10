@@ -1,13 +1,15 @@
 package com.pos.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "sale_invoice_items")
-@Data
+@Getter
+@Setter
 public class SaleInvoiceItem {
 
     @Id

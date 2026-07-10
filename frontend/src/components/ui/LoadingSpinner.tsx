@@ -5,6 +5,7 @@ type LoadingSpinnerProps = {
   size?: Size;
   fullPage?: boolean;
   inline?: boolean;
+  className?: string;
 };
 
 const sizeMap: Record<Size, string> = {

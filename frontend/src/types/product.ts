@@ -17,6 +17,7 @@ export interface Product {
   unit?: string;
   reorderLevel?: number;
   isActive?: boolean;
+  stockQuantity?: number;
 }
 
 export type ProductFormValues = {

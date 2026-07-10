@@ -6,6 +6,8 @@ import com.pos.entity.SaleInvoice;
 import com.pos.entity.SaleInvoiceItem;
 
 import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class SaleInvoiceMapper {
 
@@ -30,9 +32,13 @@ public class SaleInvoiceMapper {
         response.setPaymentMethod(invoice.getPaymentMethod());
         response.setAmountPaid(invoice.getAmountPaid());
         response.setChangeAmount(invoice.getChangeAmount());
-        response.setItems(invoice.getItems().stream()
-                .map(SaleInvoiceMapper::toItemResponse)
-                .collect(Collectors.toList()));
+        if (invoice.getItems() != null) {
+            response.setItems(new ArrayList<>(invoice.getItems()).stream()
+                    .map(SaleInvoiceMapper::toItemResponse)
+                    .collect(Collectors.toList()));
+        } else {
+            response.setItems(Collections.emptyList());
+        }
         return response;
     }
 

@@ -2,6 +2,7 @@ package com.pos.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -11,9 +12,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "purchase_orders")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PurchaseOrder {
 
     @Id
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @Column(name = "order_number", nullable = false, unique = true)
