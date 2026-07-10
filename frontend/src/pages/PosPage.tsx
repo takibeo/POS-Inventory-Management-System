@@ -347,7 +347,7 @@ export default function PosPage() {
                           {formatMoney(product.price)} đ
                         </span>
                         <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">
-                          Còn {product.stockQuantity}
+                          Còn {product.stockQuantity ?? 0}
                         </span>
                       </div>
                     </button>
@@ -391,13 +391,13 @@ export default function PosPage() {
                         {formatMoney(product.price)} đ
                       </p>
                       <p className="text-xs text-slate-400">
-                        Còn: {product.stockQuantity}
+                        Còn: {product.stockQuantity ?? 0}
                       </p>
                     </div>
                     <div className="mt-2 w-full bg-slate-100 rounded-full h-1">
                       <div 
                         className="bg-emerald-500 rounded-full h-1 transition-all duration-300"
-                        style={{ width: `${Math.min((product.stockQuantity / 100) * 100, 100)}%` }}
+                        style={{ width: `${Math.min(((product.stockQuantity ?? 0) / 100) * 100, 100)}%` }}
                       />
                     </div>
                   </button>
@@ -685,8 +685,8 @@ export default function PosPage() {
                     <p className="font-medium text-slate-900">{item.productName}</p>
                     <p className="text-xs text-slate-500">
                       SL: {item.quantity} x {formatMoney(item.unitPrice)} đ
-                      {item.discount > 0 && (
-                        <span className="ml-2 text-red-500">-{formatMoney(item.discount)} đ</span>
+                      {(item.discount ?? 0) > 0 && (
+                        <span className="ml-2 text-red-500">-{formatMoney(item.discount ?? 0)} đ</span>
                       )}
                     </p>
                   </div>

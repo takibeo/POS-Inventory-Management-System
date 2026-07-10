@@ -2,15 +2,18 @@ package com.pos.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "purchase_order_items")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class PurchaseOrderItem {
 
     @Id
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @ManyToOne

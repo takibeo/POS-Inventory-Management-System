@@ -167,7 +167,8 @@ export default function CategoriesPage() {
             </span>
             <Button 
               type="button" 
-              className="bg-emerald-500 hover:bg-emerald-600 text-white flex items-center gap-2 shadow-lg hover:shadow-emerald-200/50 transition-all duration-200 font-medium"
+              variant="secondary"
+              className="bg-white/90 hover:bg-white text-emerald-700 hover:text-emerald-800 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all duration-200 font-medium border border-white/20"
               onClick={handleAddNew}
             >
               <Plus className="w-4 h-4" />
@@ -178,7 +179,7 @@ export default function CategoriesPage() {
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+      <div className={`grid gap-6 ${showForm ? 'lg:grid-cols-[420px_1fr]' : 'grid-cols-1'}`}>
         {/* Form Section */}
         {showForm && (
           <div className="ui-card relative">

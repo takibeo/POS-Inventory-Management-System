@@ -308,7 +308,7 @@ export default function ProductsPage() {
 
       {/* Search & Actions Bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 max-w-md">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             value={search} 
@@ -341,7 +341,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+      <div className={`grid gap-6 ${showForm ? 'xl:grid-cols-[420px_1fr]' : 'grid-cols-1'}`}>
         {/* Form Section */}
         {showForm && (
           <div className="ui-card relative">

@@ -118,6 +118,19 @@ class ReportServiceImplTest {
     }
 
     @Test
+    void saleInvoiceItems_canBeStoredInSetWithoutCircularHashIssues() {
+        SaleInvoice invoice = new SaleInvoice();
+        SaleInvoiceItem item = new SaleInvoiceItem();
+        item.setSaleInvoice(invoice);
+
+        invoice.setItems(new java.util.HashSet<>());
+        invoice.getItems().add(item);
+
+        assertEquals(1, invoice.getItems().size());
+        assertTrue(invoice.getItems().contains(item));
+    }
+
+    @Test
     void lowStock_returnsInventoriesBelowReorder() {
         Inventory inv = new Inventory();
         Product p = new Product();

@@ -97,7 +97,7 @@ export default function AdminLayout() {
 
         {/* Main content */}
         <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">
+          <div className="w-full max-w-full">
             <Outlet />
           </div>
         </main>

@@ -206,7 +206,7 @@ export default function BranchesPage() {
       </div>
 
       {/* Main Content */}
-      <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+      <div className={`grid gap-6 ${showForm ? 'lg:grid-cols-[420px_1fr]' : 'grid-cols-1'}`}>
         {/* Form Section */}
         {showForm && (
           <div className="ui-card relative">
