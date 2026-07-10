@@ -14,6 +14,7 @@ Frontend cho hệ thống POS và quản lý tồn kho, xây dựng bằng React
 - Axios
 - React Hot Toast
 - Recharts
+- lucide-react
 
 ## Setup local
 
@@ -71,11 +72,13 @@ src/
 - Đăng nhập và bảo vệ route theo phiên đăng nhập
 - Dashboard tổng quan doanh thu, lợi nhuận, best sellers và cảnh báo tồn kho
 - POS bán hàng với giỏ hàng, tìm sản phẩm, tính tiền và in hóa đơn
+- Quản lý sản phẩm, danh mục, nhà cung cấp và chi nhánh
 - Quản lý đơn nhập kho, nhận hàng và export CSV
+- Quản lý tồn kho và lịch sử biến động kho theo chi nhánh
 - Báo cáo doanh thu, lợi nhuận, bán chạy, tồn kho thấp
-- Lọc tồn kho và lịch sử giao dịch theo chi nhánh
 - Responsive layout cho desktop, tablet và mobile
 - Loading, empty state và error state thống nhất
+- Giao diện hiện đại với sidebar, header, branch selector và modal xác nhận
 
 ## API integration
 

@@ -5,6 +5,18 @@ import productService from '../services/productService';
 import reportService from '../services/reportService';
 import { formatCurrency } from '../utils/formatters';
 import type { CategoryBreakdown } from '../types/report';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Package, 
+  AlertTriangle, 
+  DollarSign, 
+  PieChart,
+  ShoppingBag,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus
+} from 'lucide-react';
 
 const RevenueLineChart = lazy(() => import('../components/charts/RevenueLineChart'));
 const ProfitLineChart = lazy(() => import('../components/charts/ProfitLineChart'));
@@ -59,16 +71,42 @@ export default function DashboardPage() {
       .sort((a, b) => b.productCount - a.productCount);
   }, [products]);
 
+  // Tính toán thay đổi phần trăm (mock)
+  const revenueChange = 12.5;
+  const profitChange = 8.3;
+  const productChange = 3.2;
+
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" description="Tổng quan doanh thu, lợi nhuận và tồn kho." />
+      {/* Page Header đơn giản hơn */}
+      <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 p-6 shadow-lg">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+            <p className="text-indigo-100 text-sm mt-1">
+              Tổng quan doanh thu, lợi nhuận và tồn kho
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-1.5 bg-white/20 rounded-lg text-white text-xs">
+              {new Date().toLocaleDateString('vi-VN')}
+            </span>
+            <button className="px-4 py-2 bg-white text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-50 transition-colors flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Xuất báo cáo
+            </button>
+          </div>
+        </div>
+      </div>
 
       {reportsUnavailable && (
-        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          API báo cáo chưa sẵn sàng — biểu đồ đang dùng mock data.
-        </p>
+        <div className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          <AlertTriangle className="w-4 h-4" />
+          <span>API báo cáo chưa sẵn sàng — biểu đồ đang dùng mock data.</span>
+        </div>
       )}
 
+      {/* Stats Grid - Giữ nguyên cấu trúc StatCard */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {revenueQuery.isLoading ? (
           <SkeletonCard />
@@ -79,9 +117,12 @@ export default function DashboardPage() {
             hint={reportsUnavailable ? 'Chờ API /reports' : 'Kỳ gần nhất'}
             trend="up"
             icon={
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                <span className="text-xs text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  +{revenueChange}%
+                </span>
+              </div>
             }
           />
         )}
@@ -95,9 +136,12 @@ export default function DashboardPage() {
             hint={reportsUnavailable ? 'Chờ API /reports' : 'Kỳ gần nhất'}
             trend="up"
             icon={
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                  +{profitChange}%
+                </span>
+              </div>
             }
           />
         )}
@@ -111,9 +155,12 @@ export default function DashboardPage() {
             hint={`Tổng ${products.length} sản phẩm`}
             trend="neutral"
             icon={
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10" />
-              </svg>
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
+                  +{productChange}%
+                </span>
+              </div>
             }
           />
         )}
@@ -127,23 +174,48 @@ export default function DashboardPage() {
             hint={lowStock.length > 0 ? 'Cần nhập thêm hàng' : 'Ổn định'}
             trend={lowStock.length > 0 ? 'down' : 'neutral'}
             icon={
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                {lowStock.length > 0 && (
+                  <span className="text-xs text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                    {lowStock.length} SP
+                  </span>
+                )}
+              </div>
             }
           />
         )}
       </div>
 
+      {/* Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="ui-card">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Doanh thu 30 ngày</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">Doanh thu 30 ngày</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Biểu đồ doanh thu theo ngày</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="text-xs text-slate-500">Doanh thu</span>
+            </div>
+          </div>
           <Suspense fallback={<ChartFallback />}>
             <RevenueLineChart data={revenueTrend} isLoading={revenueTrendQuery.isLoading} />
           </Suspense>
         </div>
+
         <div className="ui-card">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Lợi nhuận 30 ngày</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">Lợi nhuận 30 ngày</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Biểu đồ lợi nhuận theo ngày</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-blue-500" />
+              <span className="text-xs text-slate-500">Lợi nhuận</span>
+            </div>
+          </div>
           <Suspense fallback={<ChartFallback />}>
             <ProfitLineChart data={profitTrend} isLoading={profitTrendQuery.isLoading} />
           </Suspense>
@@ -152,34 +224,88 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="ui-card">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Top 5 sản phẩm bán chạy</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">Top 5 sản phẩm bán chạy</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Sản phẩm có doanh số cao nhất</p>
+            </div>
+            <ShoppingBag className="w-5 h-5 text-slate-400" />
+          </div>
           <Suspense fallback={<ChartFallback />}>
             <BestSellerBarChart data={bestSellers} isLoading={bestSellersQuery.isLoading} />
           </Suspense>
         </div>
+
         <div className="ui-card">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Phân bố theo danh mục</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">Phân bố theo danh mục</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Tỷ lệ sản phẩm theo danh mục</p>
+            </div>
+            <PieChart className="w-5 h-5 text-slate-400" />
+          </div>
           <Suspense fallback={<ChartFallback />}>
             <CategoryPieChart data={categoryData} isLoading={productsQuery.isLoading} />
           </Suspense>
         </div>
       </div>
 
+      {/* Low Stock Table - Cải thiện giao diện bảng */}
       {lowStock.length > 0 && (
         <div className="ui-card">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Sản phẩm sắp hết hàng</h3>
-          <div className="divide-y divide-slate-100">
-            {lowStock.map((item) => (
-              <div key={item.productName} className="flex items-center justify-between py-2.5">
-                <span className="text-sm text-slate-800">{item.productName}</span>
-                <div className="flex items-center gap-3 text-sm">
-                  <span className="text-slate-500">
-                    Tồn: <strong className="text-red-600">{item.quantity}</strong>
-                  </span>
-                  <span className="text-slate-400">Mức đặt lại: {item.reorderLevel}</span>
-                </div>
-              </div>
-            ))}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                Sản phẩm sắp hết hàng
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">Cần nhập hàng bổ sung</p>
+            </div>
+            <span className="text-sm font-medium text-amber-600 bg-amber-50 px-3 py-1 rounded-lg">
+              {lowStock.length} sản phẩm
+            </span>
+          </div>
+          
+          <div className="overflow-x-auto -mx-2">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="text-left text-xs font-medium text-slate-400 uppercase tracking-wider py-3 px-2">
+                    Tên sản phẩm
+                  </th>
+                  <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wider py-3 px-2">
+                    Tồn kho
+                  </th>
+                  <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wider py-3 px-2">
+                    Mức đặt lại
+                  </th>
+                  <th className="text-right text-xs font-medium text-slate-400 uppercase tracking-wider py-3 px-2">
+                    Trạng thái
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {lowStock.map((item) => (
+                  <tr key={item.productName} className="hover:bg-slate-50 transition-colors">
+                    <td className="py-3 px-2 text-sm font-medium text-slate-800">
+                      {item.productName}
+                    </td>
+                    <td className="py-3 px-2 text-right text-sm">
+                      <span className="font-semibold text-red-600">{item.quantity}</span>
+                    </td>
+                    <td className="py-3 px-2 text-right text-sm text-slate-500">
+                      {item.reorderLevel}
+                    </td>
+                    <td className="py-3 px-2 text-right">
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 bg-red-50 px-2.5 py-1 rounded-full">
+                        <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                        Sắp hết
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
