@@ -89,7 +89,7 @@ class SaleInvoiceServiceImplTest {
 
     @Test
     void getAllSalesWithFiltersReturnsList() {
-        when(saleInvoiceRepository.findAll()).thenReturn(java.util.List.of(new com.pos.entity.SaleInvoice()));
+        when(saleInvoiceRepository.findAllWithItems()).thenReturn(java.util.List.of(new com.pos.entity.SaleInvoice()));
         var res = saleService.getAllSales(null, null);
         assertNotNull(res);
         assertFalse(res.isEmpty());

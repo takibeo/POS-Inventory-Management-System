@@ -1,6 +1,6 @@
 package com.pos.controller;
 
-import com.pos.entity.Inventory;
+import com.pos.dto.response.InventoryResponse;
 import com.pos.entity.InventoryTransaction;
 import com.pos.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,13 +31,13 @@ public class InventoryController {
             @ApiResponse(responseCode = "200", description = "Lấy danh sách thành công"),
             @ApiResponse(responseCode = "401", description = "Chưa đăng nhập")
     })
-    public ResponseEntity<List<Inventory>> getAll() {
+    public ResponseEntity<List<InventoryResponse>> getAll() {
         return ResponseEntity.ok(inventoryService.getAllInventories());
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Lấy tồn kho theo ID")
-    public ResponseEntity<Inventory> getById(
+    public ResponseEntity<InventoryResponse> getById(
             @Parameter(description = "ID bản ghi tồn kho", required = true)
             @PathVariable UUID id) {
         return ResponseEntity.ok(inventoryService.getInventoryById(id));

@@ -274,6 +274,7 @@ export default function PurchaseOrdersPage() {
       supplierId: form.supplierId,
       branchId: form.branchId,
       notes: form.notes,
+      status: 'SUBMITTED',
       items: form.items,
     });
   };

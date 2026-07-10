@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,15 +55,50 @@ class PurchaseOrderServiceImplTest {
 
         var resp = poService.createPurchaseOrder(req);
         assertNotNull(resp);
+        assertEquals("SUBMITTED", resp.getStatus());
         verify(purchaseOrderRepository).save(any());
     }
 
     @Test
-    void receivePurchaseOrderInvalidStatusThrows() {
+    void receivePurchaseOrderReceivedStatusStillThrows() {
         UUID poId = UUID.randomUUID();
-        PurchaseOrder existing = new PurchaseOrder(); existing.setId(poId); existing.setStatus("DRAFT");
+        PurchaseOrder existing = new PurchaseOrder(); existing.setId(poId); existing.setStatus("RECEIVED");
         when(purchaseOrderRepository.findById(poId)).thenReturn(Optional.of(existing));
         assertThrows(BusinessException.class, () -> poService.receivePurchaseOrder(poId));
+    }
+
+    @Test
+    void receivePurchaseOrderDraftStatusCanBeReceived() {
+        UUID poId = UUID.randomUUID();
+        UUID branchId = UUID.randomUUID();
+        UUID productId = UUID.randomUUID();
+
+        PurchaseOrder existing = new PurchaseOrder();
+        existing.setId(poId);
+        existing.setStatus("DRAFT");
+        Branch branch = new Branch();
+        branch.setId(branchId);
+        existing.setBranch(branch);
+        existing.setItems(new HashSet<>());
+
+        PurchaseOrderItem item = new PurchaseOrderItem();
+        Product product = new Product();
+        product.setId(productId);
+        item.setProduct(product);
+        item.setQuantity(3);
+        existing.getItems().add(item);
+
+        Inventory inventory = new Inventory();
+        inventory.setQuantity(0);
+        inventory.setAvailableQuantity(0);
+
+        when(purchaseOrderRepository.findById(poId)).thenReturn(Optional.of(existing));
+        when(purchaseOrderRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(inventoryRepository.findByBranchIdAndProductId(branchId, productId)).thenReturn(Optional.of(inventory));
+        when(inventoryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(transactionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        assertDoesNotThrow(() -> poService.receivePurchaseOrder(poId));
     }
 
     @Test

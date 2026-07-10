@@ -80,7 +80,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         purchaseOrder.setOrderNumber(generateOrderNumber());
         purchaseOrder.setSupplier(supplier);
         purchaseOrder.setBranch(branch);
-        purchaseOrder.setStatus(request.getStatus() != null ? request.getStatus().toUpperCase() : "PENDING");
+        purchaseOrder.setStatus(request.getStatus() != null ? request.getStatus().toUpperCase() : "SUBMITTED");
         purchaseOrder.setNotes(request.getNotes());
         purchaseOrder.setOrderedDate(LocalDate.now());
         purchaseOrder.setCreatedAt(Instant.now());
@@ -163,8 +163,10 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         PurchaseOrder existing = purchaseOrderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Purchase order not found"));
 
-        if (!"SUBMITTED".equalsIgnoreCase(existing.getStatus())) {
-            throw new BusinessException("INVALID_ORDER_STATUS", "Chỉ đơn đã gửi mới được nhận hàng");
+        if (!"SUBMITTED".equalsIgnoreCase(existing.getStatus())
+                && !"PENDING".equalsIgnoreCase(existing.getStatus())
+                && !"DRAFT".equalsIgnoreCase(existing.getStatus())) {
+            throw new BusinessException("INVALID_ORDER_STATUS", "Chỉ đơn ở trạng thái DRAFT, PENDING hoặc SUBMITTED mới được nhận hàng");
         }
 
         existing.setStatus("RECEIVED");
@@ -183,7 +185,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             InventoryTransaction transaction = new InventoryTransaction();
             transaction.setId(UUID.randomUUID());
             transaction.setInventory(inventory);
-            transaction.setTransactionType("PURCHASE_RECEIPT");
+            // Use allowed DB values: IN for incoming stock
+            transaction.setTransactionType("IN");
             transaction.setQuantity(item.getQuantity());
             transaction.setRemark("Nhận hàng từ đơn nhập kho " + existing.getOrderNumber());
             transaction.setReferenceId(existing.getId());
