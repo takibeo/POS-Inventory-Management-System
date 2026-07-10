@@ -140,6 +140,36 @@ Các mục còn tiếp tục cải thiện:
 - Backend: chạy Maven trong `backend`
 - Frontend: chạy `npm install` và `npm run dev` trong `frontend`
 
+## Chạy test
+
+### Backend
+
+Từ thư mục `backend`:
+
+```bash
+mvn test
+```
+
+Chạy một lớp test cụ thể:
+
+```bash
+mvn -Dtest=ReportServiceImplTest test
+```
+
+### Frontend
+
+Từ thư mục `frontend`:
+
+```bash
+npm test
+```
+
+Nếu chưa cài đặt test runner hoặc project chưa cấu hình test, bạn có thể dùng:
+
+```bash
+npm run build
+```
+
 ### Chạy bằng Docker (PostgreSQL + Adminer)
 
 Nếu bạn chưa cài PostgreSQL cục bộ, dùng Docker Compose để khởi động cơ sở dữ liệu nhanh:

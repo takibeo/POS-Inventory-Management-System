@@ -2,9 +2,11 @@ package com.pos.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
 
+import com.pos.dto.response.InventoryResponse;
 import com.pos.entity.Inventory;
 import com.pos.entity.InventoryTransaction;
 import com.pos.exception.BusinessException;
+import com.pos.mapper.InventoryMapper;
 import com.pos.repository.InventoryRepository;
 import com.pos.repository.InventoryTransactionRepository;
 import com.pos.service.InventoryService;
@@ -29,15 +31,18 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public List<Inventory> getAllInventories() {
+    public List<InventoryResponse> getAllInventories() {
         log.info("InventoryService.getAllInventories called");
-        return inventoryRepository.findAll();
+        return inventoryRepository.findAll().stream()
+                .map(InventoryMapper::toResponse)
+                .toList();
     }
 
     @Override
-    public Inventory getInventoryById(UUID id) {
+    public InventoryResponse getInventoryById(UUID id) {
         log.info("InventoryService.getInventoryById id={}", id);
         return inventoryRepository.findById(id)
+                .map(InventoryMapper::toResponse)
                 .orElseThrow(() -> new RuntimeException("Inventory record not found"));
     }
 

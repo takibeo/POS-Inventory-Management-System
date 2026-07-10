@@ -127,7 +127,8 @@ public class SaleInvoiceServiceImpl implements SaleInvoiceService {
             InventoryTransaction transaction = new InventoryTransaction();
             transaction.setId(UUID.randomUUID());
             transaction.setInventory(inventory);
-            transaction.setTransactionType("SALE");
+            // Use allowed DB values: OUT for outgoing stock (sale)
+            transaction.setTransactionType("OUT");
             transaction.setQuantity(-quantity);
             transaction.setRemark("Giảm tồn kho do bán hàng");
             transaction.setReferenceId(saleInvoice.getId());
