@@ -1,8 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button, DataTable, EmptyState, LoadingSpinner, type DataTableColumn, PageHeader } from '../components/ui';
+import { useBranchContext } from '../contexts/BranchContext';
 import inventoryService from '../services/inventoryService';
+import productService from '../services/productService';
 import type { Inventory } from '../types/inventory';
+import type { Product } from '../types/product';
 import { 
   Package, 
   Filter, 
@@ -23,10 +26,17 @@ function formatNumber(value: number) {
 
 export default function InventoryPage() {
   const [selectedBranchId, setSelectedBranchId] = useState('');
+  const { branches } = useBranchContext();
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['inventories'],
     queryFn: inventoryService.getInventories,
+    retry: false,
+  });
+
+  const { data: products = [] } = useQuery<Product[], Error>({
+    queryKey: ['products'],
+    queryFn: productService.getProducts,
     retry: false,
   });
 
@@ -56,7 +66,7 @@ export default function InventoryPage() {
       render: (row) => (
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4 text-slate-400" />
-          <span className="font-medium text-slate-700">{row.branchId}</span>
+          <span className="font-medium text-slate-700">{getBranchName(row.branchId)}</span>
         </div>
       )
     },
@@ -68,7 +78,7 @@ export default function InventoryPage() {
           <div className="w-8 h-8 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-lg flex items-center justify-center">
             <Package className="w-4 h-4 text-emerald-600" />
           </div>
-          <span className="text-slate-800">{row.productId}</span>
+          <span className="text-slate-800">{getProductName(row.productId)}</span>
         </div>
       )
     },
@@ -119,10 +129,12 @@ export default function InventoryPage() {
     },
   ];
 
-  // Lấy tên chi nhánh (mock)
   const getBranchName = (branchId: string) => {
-    // Nếu có service lấy tên chi nhánh, thay thế ở đây
-    return branchId;
+    return branches.find((branch) => branch.id === branchId)?.name ?? branchId;
+  };
+
+  const getProductName = (productId: string) => {
+    return products.find((product) => product.id === productId)?.name ?? productId;
   };
 
   return (

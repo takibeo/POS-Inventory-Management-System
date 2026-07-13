@@ -6,9 +6,11 @@ import { Button, EmptyState, LoadingSpinner, PageHeader } from '../components/ui
 import { useBranchContext } from '../contexts/BranchContext';
 import authService from '../services/authService';
 import branchService from '../services/branchService';
+import inventoryService from '../services/inventoryService';
 import productService from '../services/productService';
 import saleService from '../services/saleService';
 import type { Branch } from '../types/branch';
+import type { Inventory } from '../types/inventory';
 import type { Product } from '../types/product';
 import type { SaleInvoice, SaleInvoiceRequest, SaleItem } from '../types/sale';
 import type { User } from '../types/auth';
@@ -82,6 +84,17 @@ export default function PosPage() {
     retry: false,
   });
 
+  const {
+    data: inventories = [],
+    isLoading: inventoriesLoading,
+    isError: inventoriesError,
+  } = useQuery<Inventory[], Error>({
+    queryKey: ['inventories', selectedBranchId],
+    queryFn: inventoryService.getInventories,
+    retry: false,
+    enabled: Boolean(selectedBranchId),
+  });
+
   useEffect(() => {
     authService.getCurrentUser().then(setCurrentUser).catch(() => setCurrentUser(null));
   }, []);
@@ -117,27 +130,44 @@ export default function PosPage() {
   const discount = watch('discount') || 0;
   const paymentMethod = watch('paymentMethod') || 'CASH';
 
+  const inventoryStockByProductId = useMemo(() => {
+    if (!selectedBranchId) return new Map<string, number>();
+
+    return new Map(
+      inventories
+        .filter((item) => item.branchId === selectedBranchId)
+        .map((item) => [item.productId, item.availableQuantity ?? 0])
+    );
+  }, [inventories, selectedBranchId]);
+
+  const productsWithStock = useMemo(() => {
+    return products.map((product) => ({
+      ...product,
+      stockQuantity: inventoryStockByProductId.get(product.id) ?? 0,
+    }));
+  }, [products, inventoryStockByProductId]);
+
   const filteredProducts = useMemo(() => {
     const keyword = search.trim().toLowerCase();
-    if (!keyword) return products.slice(0, 12);
-    return products.filter(
+    if (!keyword) return productsWithStock.slice(0, 12);
+    return productsWithStock.filter(
       (product) =>
         product.name.toLowerCase().includes(keyword) ||
         product.sku.toLowerCase().includes(keyword)
     );
-  }, [products, search]);
+  }, [productsWithStock, search]);
 
   const suggestionProducts = useMemo(() => {
     const keyword = search.trim().toLowerCase();
     if (!keyword) return [];
-    return products
+    return productsWithStock
       .filter(
         (product) =>
           product.name.toLowerCase().includes(keyword) ||
           product.sku.toLowerCase().includes(keyword)
       )
       .slice(0, 5);
-  }, [products, search]);
+  }, [productsWithStock, search]);
 
   const subtotal = cart.reduce(
     (sum, item) => sum + item.unitPrice * item.quantity - (item.discount ?? 0),
@@ -163,6 +193,14 @@ export default function PosPage() {
   });
 
   const addToCart = (product: Product) => {
+    const availableStock = inventoryStockByProductId.get(product.id) ?? 0;
+    const existingQty = cart.find((item) => item.productId === product.id)?.quantity ?? 0;
+
+    if (availableStock <= 0 || existingQty + 1 > availableStock) {
+      toast.error(`Sản phẩm "${product.name}" chỉ còn ${availableStock} trong kho.`);
+      return;
+    }
+
     setCart((prev) => {
       const existing = prev.find((item) => item.productId === product.id);
       if (existing) {
