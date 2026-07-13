@@ -137,6 +137,13 @@ export default function ReportsPage() {
   ], []);
 
   const lowStockColumns: DataTableColumn<LowStockItem>[] = useMemo(() => [
+    {
+      key: 'branchName',
+      header: 'Chi nhánh',
+      render: (r) => (
+        <span className="font-medium text-slate-700">{r.branchName}</span>
+      ),
+    },
     { 
       key: 'productName', 
       header: 'Tên sản phẩm',

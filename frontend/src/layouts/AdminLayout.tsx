@@ -70,9 +70,9 @@ export default function AdminLayout() {
         )}
 
         {/* Sidebar */}
-        <aside
-          className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-xl transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:z-auto lg:shadow-none lg:bg-transparent lg:backdrop-blur-none lg:border-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        >
+          <aside
+            className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-xl transform transition-transform duration-300 ease-in-out lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:overflow-y-auto lg:translate-x-0 lg:z-auto lg:shadow-none lg:bg-transparent lg:backdrop-blur-none lg:border-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          >
           <div className="flex items-center justify-between border-b border-slate-200/60 px-5 py-4 lg:hidden">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
