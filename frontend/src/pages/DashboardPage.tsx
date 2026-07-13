@@ -285,25 +285,37 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {lowStock.map((item) => (
-                  <tr key={item.productName} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-3 px-2 text-sm font-medium text-slate-800">
-                      {item.productName}
-                    </td>
-                    <td className="py-3 px-2 text-right text-sm">
-                      <span className="font-semibold text-red-600">{item.quantity}</span>
-                    </td>
-                    <td className="py-3 px-2 text-right text-sm text-slate-500">
-                      {item.reorderLevel}
-                    </td>
-                    <td className="py-3 px-2 text-right">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 bg-red-50 px-2.5 py-1 rounded-full">
-                        <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
-                        Sắp hết
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {lowStock.map((item) => {
+                  const quantity = Number(item.quantity ?? 0);
+                  const isSoldOut = quantity <= 0;
+                  const status = isSoldOut ? 'Hết hàng' : 'Sắp hết';
+                  const statusClass = isSoldOut
+                    ? 'text-white bg-red-600'
+                    : 'text-red-600 bg-red-50';
+                  const dotClass = isSoldOut
+                    ? 'bg-white'
+                    : 'bg-red-500';
+
+                  return (
+                    <tr key={`${item.productName}-${quantity}-${item.reorderLevel}`} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-2 text-sm font-medium text-slate-800">
+                        {item.productName}
+                      </td>
+                      <td className="py-3 px-2 text-right text-sm">
+                        <span className="font-semibold text-red-600">{quantity}</span>
+                      </td>
+                      <td className="py-3 px-2 text-right text-sm text-slate-500">
+                        {item.reorderLevel}
+                      </td>
+                      <td className="py-3 px-2 text-right">
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full ${statusClass}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
+                          {status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

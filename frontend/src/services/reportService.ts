@@ -20,9 +20,17 @@ const getBestSellers = () =>
     axiosInstance.get<BestSeller[]>('/reports/best-sellers')
         .then(res => res.data);
 
-const getLowStock = () =>
-    axiosInstance.get<LowStockItem[]>('/reports/low-stock')
-        .then(res => res.data);
+const getLowStock = async (): Promise<LowStockItem[]> => {
+  const res = await axiosInstance.get<any[]>('/reports/low-stock');
+  // Backend returns { availableQuantity, reorderLevel, productName, ... }
+  // Normalize to the frontend `LowStockItem` shape: { productName, quantity, reorderLevel }
+  return (res.data ?? []).map((it) => ({
+    branchName: it.branchName ?? it.branch_name ?? 'N/A',
+    productName: it.productName ?? it.product_name ?? 'Unknown',
+    quantity: (it.availableQuantity ?? it.available_quantity ?? it.quantity ?? 0),
+    reorderLevel: it.reorderLevel ?? it.reorder_level ?? 0,
+  }));
+};
 
 
 // Thử gọi API, nếu backend chưa có thì dùng mock 30 ngày

@@ -9,7 +9,9 @@ import com.pos.dto.response.RevenueReportResponse;
 import com.pos.entity.Inventory;
 import com.pos.entity.SaleInvoice;
 import com.pos.entity.SaleInvoiceItem;
+import com.pos.repository.BranchRepository;
 import com.pos.repository.InventoryRepository;
+import com.pos.repository.ProductRepository;
 import com.pos.repository.SaleInvoiceRepository;
 import com.pos.service.ReportService;
 import org.springframework.stereotype.Service;
@@ -28,11 +30,17 @@ public class ReportServiceImpl implements ReportService {
 
     private final SaleInvoiceRepository saleInvoiceRepository;
     private final InventoryRepository inventoryRepository;
+    private final ProductRepository productRepository;
+    private final BranchRepository branchRepository;
 
     public ReportServiceImpl(SaleInvoiceRepository saleInvoiceRepository,
-                             InventoryRepository inventoryRepository) {
+                             InventoryRepository inventoryRepository,
+                             ProductRepository productRepository,
+                             BranchRepository branchRepository) {
         this.saleInvoiceRepository = saleInvoiceRepository;
         this.inventoryRepository = inventoryRepository;
+        this.productRepository = productRepository;
+        this.branchRepository = branchRepository;
     }
 
     @Override
@@ -146,23 +154,38 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public List<LowStockReportResponse> getLowStockReport() {
         log.info("ReportService.getLowStockReport called");
-        return inventoryRepository.findAll().stream()
+
+        Map<String, Inventory> inventoryMap = inventoryRepository.findAll().stream()
                 .filter(inventory -> inventory.getProduct() != null && inventory.getBranch() != null)
-                .filter(inventory -> {
-                    Integer available = inventory.getAvailableQuantity() != null ? inventory.getAvailableQuantity() : 0;
-                    Integer reorder = inventory.getProduct().getReorderLevel() != null ? inventory.getProduct().getReorderLevel() : 0;
-                    return available <= reorder;
-                })
-                .map(inventory -> {
-                    LowStockReportResponse response = new LowStockReportResponse();
-                    response.setBranchId(inventory.getBranch().getId());
-                    response.setBranchName(inventory.getBranch().getName());
-                    response.setProductId(inventory.getProduct().getId());
-                    response.setProductName(inventory.getProduct().getName());
-                    response.setAvailableQuantity(inventory.getAvailableQuantity());
-                    response.setReorderLevel(inventory.getProduct().getReorderLevel());
-                    return response;
-                })
+                .collect(Collectors.toMap(
+                        inventory -> inventory.getBranch().getId() + ":" + inventory.getProduct().getId(),
+                        inventory -> inventory,
+                        (first, second) -> first
+                ));
+
+        List<LowStockReportResponse> result = productRepository.findAll().stream()
+                .flatMap(product -> branchRepository.findAll().stream()
+                        .map(branch -> {
+                            String key = branch.getId() + ":" + product.getId();
+                            Inventory inventory = inventoryMap.get(key);
+                            int available = inventory != null && inventory.getAvailableQuantity() != null ? inventory.getAvailableQuantity() : 0;
+                            int reorder = product.getReorderLevel() != null ? product.getReorderLevel() : 0;
+                            if (available <= reorder) {
+                                LowStockReportResponse response = new LowStockReportResponse();
+                                response.setBranchId(branch.getId());
+                                response.setBranchName(branch.getName());
+                                response.setProductId(product.getId());
+                                response.setProductName(product.getName());
+                                response.setAvailableQuantity(available);
+                                response.setReorderLevel(reorder);
+                                return response;
+                            }
+                            return null;
+                        })
+                )
+                .filter(response -> response != null)
                 .collect(Collectors.toList());
+
+        return result;
     }
 }

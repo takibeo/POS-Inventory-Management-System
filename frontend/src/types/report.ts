@@ -29,6 +29,7 @@ export interface BestSeller {
 }
 
 export interface LowStockItem {
+  branchName: string;
   productName: string;
   quantity: number;
   reorderLevel: number;
