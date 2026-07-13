@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Button, ConfirmModal, DataTable, EmptyState, LoadingSpinner, type DataTableColumn, PageHeader } from '../components/ui';
@@ -92,6 +92,8 @@ export default function PurchaseOrdersPage() {
     retry: false,
   });
 
+  const [productNameMap, setProductNameMap] = useState<Record<string, string>>({});
+
   const { data: suppliers = [], isLoading: suppliersLoading } = useQuery<Supplier[], Error>({
     queryKey: ['suppliers'],
     queryFn: supplierService.getSuppliers,
@@ -128,7 +130,36 @@ export default function PurchaseOrdersPage() {
   });
 
   const getProductName = (productId: string) =>
-    products.find((p) => p.id === productId)?.name ?? productId;
+    productNameMap[productId] ?? products.find((p) => p.id === productId)?.name ?? productId;
+
+  // When user opens an order, fetch any product names not present in the cached products list
+  useEffect(() => {
+    if (!activeOrder) return;
+    const ids = Array.from(new Set((activeOrder.items ?? []).map((i) => i.productId)));
+    const missing = ids.filter((id) => !products.find((p) => p.id === id) && !productNameMap[id]);
+    if (missing.length === 0) return;
+
+    (async () => {
+      const entries: Array<[string, string | undefined]> = [];
+      await Promise.all(
+        missing.map(async (id) => {
+          try {
+            const p = await productService.getProduct(id);
+            entries.push([id, p?.name]);
+          } catch (e) {
+            entries.push([id, undefined]);
+          }
+        })
+      );
+      setProductNameMap((prev) => {
+        const next = { ...prev };
+        for (const [id, name] of entries) {
+          if (name) next[id] = name;
+        }
+        return next;
+      });
+    })();
+  }, [activeOrder, products, productNameMap]);
   const getSupplierName = (supplierId: string) =>
     suppliers.find((s) => s.id === supplierId)?.name ?? supplierId;
   const getBranchName = (branchId: string) =>
@@ -208,7 +239,7 @@ export default function PurchaseOrdersPage() {
           <div className="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center">
             <Package className="w-3.5 h-3.5 text-indigo-600" />
           </div>
-          <span>{getProductName(row.productId)}</span>
+          <span className="font-medium text-slate-700">{getProductName(row.productId)}</span>
         </div>
       )
     },
@@ -378,7 +409,7 @@ export default function PurchaseOrdersPage() {
         </Button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[500px_1fr] print:block">
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_1.4fr] print:block">
         {/* Form Section */}
         {showForm && (
           <div className="ui-card space-y-4 print:hidden relative">
